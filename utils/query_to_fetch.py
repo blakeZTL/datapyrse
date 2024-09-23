@@ -23,7 +23,7 @@ def query_expression_to_fetchxml(query: QueryExpression) -> str:
     entity = ET.SubElement(fetch, "entity", name=query.entity_name)
 
     # Columns/attributes
-    if query.column_set.all_columns:
+    if query.column_set.columns == True:
         ET.SubElement(entity, "all-attributes")
     else:
         for column in query.column_set.columns:
