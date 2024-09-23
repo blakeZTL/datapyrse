@@ -1,11 +1,11 @@
 import xml.etree.ElementTree as ET
 from typing import List, Optional
+from models.condition_operator import ConditionOperator
 from models.query_expression import QueryExpression
 from models.filter_expression import FilterExpression
 from models.link_entity import LinkEntity
 
 
-# TODO: Implement unit testing for this function
 def query_expression_to_fetchxml(query: QueryExpression) -> str:
     # Root element: <fetch>
     fetch = ET.Element(
@@ -50,10 +50,9 @@ def query_expression_to_fetchxml(query: QueryExpression) -> str:
     return ET.tostring(fetch, encoding="unicode")
 
 
-# TODO: Implement unit testing for this function
 def filter_to_fetchxml(filter_expression: FilterExpression) -> ET.Element:
     filter_element = ET.Element(
-        "filter", type=filter_expression.filter_operator.lower()
+        "filter", type=filter_expression.filter_operator.value.lower()
     )
 
     # Add conditions
@@ -62,12 +61,18 @@ def filter_to_fetchxml(filter_expression: FilterExpression) -> ET.Element:
             filter_element,
             "condition",
             attribute=condition.attribute_name,
-            operator=condition.operator.lower(),
+            operator=condition.operator.value.lower(),
+            value="",
         )
-        if condition.values:
+        if (
+            condition.operator == ConditionOperator.IN
+            or condition.operator == ConditionOperator.NOT_IN
+        ) and condition.values:
             for value in condition.values:
                 value_element = ET.SubElement(condition_element, "value")
                 value_element.text = str(value)
+        else:
+            condition_element.set("value", str(condition.values[0]))
 
     # Add nested filters (if any)
     for sub_filter in filter_expression.filters:

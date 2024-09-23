@@ -10,7 +10,7 @@ def test_condition_expression():
     )
     assert condition_expression.attribute_name == "name"
     assert condition_expression.operator == ConditionOperator.EQUAL
-    assert condition_expression.values == "John"
+    assert condition_expression.values == ["John"]
 
 
 def test_condition_expression_with_no_values():
@@ -96,6 +96,4 @@ def test_condition_expression_with_invalid_values():
             values=ColumnSet(),
         )
     except Exception as e:
-        assert (
-            str(e) == "Values must be a list, boolean, integer, float, string, or UUID"
-        )
+        assert str(e) == "Columns must be a list of strings or a value of True"

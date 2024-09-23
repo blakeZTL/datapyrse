@@ -3,8 +3,10 @@ from models.column_set import ColumnSet
 
 
 def test_empty_column_set():
-    column_set = ColumnSet()
-    assert column_set.columns == None
+    with pytest.raises(
+        ValueError, match="Columns must be a list of strings or a value of True"
+    ):
+        ColumnSet()
 
 
 def test_column_set_with_list():
@@ -26,5 +28,7 @@ def test_column_set_with_true():
 
 
 def test_column_set_with_none():
-    column_set = ColumnSet(columns=None)
-    assert column_set.columns == None
+    with pytest.raises(
+        ValueError, match="Columns must be a list of strings or a value of True"
+    ):
+        ColumnSet(columns=None)

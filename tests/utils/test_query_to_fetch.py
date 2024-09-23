@@ -1,0 +1,174 @@
+import xml.etree.ElementTree as ET
+
+import pytest
+from models.condition_operator import ConditionOperator
+from models.filter_operator import FilterOperator
+from models.query_expression import QueryExpression
+from models.filter_expression import FilterExpression
+from models.link_entity import LinkEntity
+from models.column_set import ColumnSet
+from models.order_expression import OrderExpression
+from models.condition_expression import ConditionExpression
+from utils.query_to_fetch import (
+    query_expression_to_fetchxml,
+    filter_to_fetchxml,
+    link_entity_to_fetchxml,
+)
+
+
+class TestQueryExpressionToFetchXML:
+
+    def test_query_with_columns_and_filter(self):
+        query = QueryExpression(
+            entity_name="account",
+            column_set=ColumnSet(columns=["name", "accountnumber"]),
+            criteria=FilterExpression(
+                filter_operator=FilterOperator.AND,
+                conditions=[
+                    ConditionExpression(
+                        attribute_name="statuscode",
+                        operator=ConditionOperator.EQUAL,
+                        values=1,
+                    )
+                ],
+            ),
+            orders=[OrderExpression(attribute_name="name", order_type="ASC")],
+            top_count=50,
+        )
+
+        fetchxml = query_expression_to_fetchxml(query)
+
+        root = ET.fromstring(fetchxml)
+        entity = root.find("entity")
+        assert root.tag == "fetch"
+        assert root.attrib["top"] == "50"
+        assert entity.attrib["name"] == "account"
+
+        # Check if attributes are correct
+        attributes = entity.findall("attribute")
+        assert attributes[0].attrib["name"] == "name"
+        assert attributes[1].attrib["name"] == "accountnumber"
+
+    def test_query_with_all_attributes(self):
+        query = QueryExpression(
+            entity_name="account", column_set=ColumnSet(True), orders=[]
+        )
+
+        fetchxml = query_expression_to_fetchxml(query)
+
+        root = ET.fromstring(fetchxml)
+        entity = root.find("entity")
+        all_attributes = entity.find("all-attributes")
+
+        assert all_attributes is not None
+
+
+class TestFilterToFetchXML:
+
+    def test_filter_with_conditions(self):
+        filter_expression = FilterExpression(
+            filter_operator=FilterOperator.AND,
+            conditions=[
+                ConditionExpression(
+                    attribute_name="statuscode",
+                    operator=ConditionOperator.EQUAL,
+                    values=1,
+                ),
+                ConditionExpression(
+                    attribute_name="createdon",
+                    operator=ConditionOperator.GREATER,
+                    values=["2021-01-01"],
+                ),
+            ],
+        )
+
+        filter_xml = filter_to_fetchxml(filter_expression)
+
+        assert filter_xml.tag == "filter"
+        assert filter_xml.attrib["type"] == "and"
+
+        conditions = filter_xml.findall("condition")
+        assert conditions[0].attrib["attribute"] == "statuscode"
+        assert conditions[0].attrib["operator"] == "eq"
+        assert conditions[0].attrib["value"] == "1"
+
+        assert conditions[1].attrib["attribute"] == "createdon"
+        assert conditions[1].attrib["operator"] == "gt"
+        assert conditions[1].attrib["value"] == "2021-01-01"
+
+    def test_nested_filters(self):
+        nested_filter = FilterExpression(
+            filter_operator=FilterOperator.OR,
+            conditions=[
+                ConditionExpression(
+                    attribute_name="firstname",
+                    operator=ConditionOperator.EQUAL,
+                    values=["John"],
+                )
+            ],
+        )
+
+        filter_expression = FilterExpression(
+            filter_operator=FilterOperator.AND, filters=[nested_filter]
+        )
+
+        filter_xml = filter_to_fetchxml(filter_expression)
+        nested_filter_xml = filter_xml.find("filter")
+
+        assert nested_filter_xml.attrib["type"] == "or"
+        condition = nested_filter_xml.find("condition")
+        assert condition.attrib["attribute"] == "firstname"
+        assert condition.attrib["operator"] == "eq"
+        assert condition.attrib["value"] == "John"
+
+
+@pytest.mark.skip("Not implemented yet")
+class TestLinkEntityToFetchXML:
+
+    def test_link_entity_with_columns(self):
+        link_entity = LinkEntity(
+            link_from_entity_name="contact",
+            link_from_attribute_name="contactid",
+            link_to_entity_name="account",
+            link_to_attribute_name="accountid",
+            join_operator="INNER",
+            columns=ColumnSet(columns=["name", "accountnumber"]),
+        )
+
+        link_xml = link_entity_to_fetchxml(link_entity)
+
+        assert link_xml.tag == "link-entity"
+        assert link_xml.attrib["name"] == "account"
+        assert link_xml.attrib["from_"] == "contactid"
+        assert link_xml.attrib["to"] == "accountid"
+        assert link_xml.attrib["linktype"] == "inner"
+
+        attributes = link_xml.findall("attribute")
+        assert attributes[0].attrib["name"] == "name"
+        assert attributes[1].attrib["name"] == "accountnumber"
+
+    def test_link_entity_with_filter(self):
+        link_entity = LinkEntity(
+            link_from_entity_name="contact",
+            link_from_attribute_name="contactid",
+            link_to_entity_name="account",
+            link_to_attribute_name="accountid",
+            join_operator="INNER",
+            link_criteria=FilterExpression(
+                filter_operator="AND",
+                conditions=[
+                    ConditionExpression(
+                        attribute_name="statuscode", operator="Equal", values=[1]
+                    )
+                ],
+            ),
+        )
+
+        link_xml = link_entity_to_fetchxml(link_entity)
+
+        filter_xml = link_xml.find("filter")
+        assert filter_xml is not None
+        condition = filter_xml.find("condition")
+        assert condition.attrib["attribute"] == "statuscode"
+        assert condition.attrib["operator"] == "equal"
+        assert condition.find("value").text == "1"

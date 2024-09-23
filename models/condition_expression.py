@@ -11,10 +11,6 @@ class ConditionExpression:
     values: Union[List[Any], bool, int, float, str, uuid.UUID, None]
 
     def __post_init__(self) -> None:
-        if not self.values:
-            self.values = None
-        else:
-            self.values = self.values
 
         if not self.operator:
             raise Exception("Operator is required")
@@ -33,6 +29,14 @@ class ConditionExpression:
                 raise Exception(
                     "Values must be a list, boolean, integer, float, string, or UUID"
                 )
+
+        if not self.values:
+            self.values = None
+        else:
+            if not isinstance(self.values, list):
+                self.values = [self.values]
+            else:
+                self.values = self.values
 
         if (
             self.operator == ConditionOperator.NULL

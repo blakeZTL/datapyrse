@@ -4,7 +4,13 @@ import msal
 import time
 import logging
 
+from models.column_set import ColumnSet
+from models.condition_expression import ConditionExpression
+from models.condition_operator import ConditionOperator
 from models.entity import Entity
+from models.filter_expression import FilterExpression
+from models.filter_operator import FilterOperator
+from models.query_expression import QueryExpression
 
 
 class ServiceClient:
@@ -71,12 +77,12 @@ class ServiceClient:
 
         return retrieve_method(self, entity_logical_name, entity_id, column_set)
 
-    def retrieve_multiple(self, entity_logical_name: str, column_set: List[str]):
+    def retrieve_multiple(self, query: QueryExpression):
         from services.retrieve_multiple import (
             retrieve_multiple as retrieve_multiple_method,
         )
 
-        return retrieve_multiple_method(self, entity_logical_name, column_set)
+        return retrieve_multiple_method(self, query)
 
 
 if __name__ == "__main__":
@@ -97,8 +103,20 @@ if __name__ == "__main__":
         print(entity.to_dict())
 
         entity_collection = service_client.retrieve_multiple(
-            entity_logical_name="burstbpa_requesttype",
-            column_set=["burstbpa_name", "burstbpa_state", "ownerid"],
+            QueryExpression(
+                entity_name="burstbpa_requesttype",
+                column_set=ColumnSet(True),
+                criteria=FilterExpression(
+                    filter_operator=FilterOperator.AND,
+                    conditions=[
+                        ConditionExpression(
+                            attribute_name="burstbpa_name",
+                            operator=ConditionOperator.EQUAL,
+                            values="Basic",
+                        )
+                    ],
+                ),
+            )
         )
 
         print(entity_collection.to_dict())
