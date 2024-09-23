@@ -66,15 +66,17 @@ class ServiceClient:
         self.IsReady = True
         return self.access_token
 
-    def retrieve(self, entity_plural_name: str, entity_id: str, column_set: List[str]):
-        from retrieve import retrieve as retrieve_method
+    def retrieve(self, entity_logical_name: str, entity_id: str, column_set: List[str]):
+        from services.retrieve import retrieve as retrieve_method
 
-        return retrieve_method(self, entity_plural_name, entity_id, column_set)
+        return retrieve_method(self, entity_logical_name, entity_id, column_set)
 
-    def retrieve_multiple(self, entity_plural_name: str, column_set: List[str]):
-        from retrieve import retrieve_multiple as retrieve_multiple_method
+    def retrieve_multiple(self, entity_logical_name: str, column_set: List[str]):
+        from services.retrieve_multiple import (
+            retrieve_multiple as retrieve_multiple_method,
+        )
 
-        return retrieve_multiple_method(self, entity_plural_name, column_set)
+        return retrieve_multiple_method(self, entity_logical_name, column_set)
 
 
 if __name__ == "__main__":
@@ -86,16 +88,30 @@ if __name__ == "__main__":
         prompt="select_account",
     )
     if service_client.IsReady:
-        response = service_client.retrieve(
-            entity_plural_name="burstbpa_requesttype",
-            entity_id="72A3456E-806D-EF11-A671-001DD8037580",
-            column_set=["burstbpa_name"],
-        )
-        entity = Entity(
-            entity_id=uuid.UUID(response["burstbpa_requesttypeid"]),
+        entity: Entity = service_client.retrieve(
             entity_logical_name="burstbpa_requesttype",
-            attributes=response,
+            entity_id=uuid.UUID("72A3456E-806D-EF11-A671-001DD8037580"),
+            column_set=["burstbpa_name", "burstbpa_state", "ownerid"],
         )
-        entity["burstbpa_anotherattribute"] = "Another attribute"
 
         print(entity.to_dict())
+
+        entity_collection = service_client.retrieve_multiple(
+            entity_logical_name="burstbpa_requesttype",
+            column_set=["burstbpa_name", "burstbpa_state", "ownerid"],
+        )
+
+        print(entity_collection.to_dict())
+
+    # if __name__ == "__main__":
+    # entity = Entity(
+    #     entity_logical_name="account",
+    #     attributes={
+    #         "_ownerid_value": str(uuid.uuid4()),
+    #         "_ownerid_value@Microsoft.Dynamics.CRM.associatednavigationproperty": "ownerid",
+    #         "_ownerid_value@Microsoft.Dynamics.CRM.lookuplogicalname": "systemuser",
+    #         "_ownerid_value@OData.Community.Display.V1.FormattedValue": "James Bradford",
+    #     },
+    # )
+    # print(entity.to_dict())
+    # print(entity["ownerid"])
