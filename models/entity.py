@@ -1,13 +1,14 @@
 from dataclasses import dataclass, field
-from typing import Dict, Tuple, Any
+from typing import Dict, Any, List
 import uuid
-from utils.validation import validate_guid
+from models.entity_reference import EntityReference
+from models.option_set import OptionSet
 
 
 @dataclass
 class Entity:
     """
-    Represents a generic entity in Dataverse or similar systems.
+    Represents a generic entity in Dataverse.
     """
 
     entity_logical_name: str
@@ -17,12 +18,9 @@ class Entity:
     def __post_init__(self) -> None:
         if not self.attributes:
             self.attributes = {}
-
-        isValid, validId = validate_guid(self.entity_id)
-        if not isValid:
-            raise Exception("Entity ID is required and must be a valid GUID")
         else:
-            self.entity_id = validId
+            parsed_attributes = self._parse_attributes(list(self.attributes.keys()))
+            self.attributes = parsed_attributes
 
     def __getitem__(self, key: str) -> Any:
         """Allows getting an attribute using dictionary-like access."""
@@ -40,43 +38,41 @@ class Entity:
         }
         return {**base_dict, **self.attributes}
 
-    def get_attribute_value(self, attribute_name: str) -> Any:
-        """Get the value of an attribute by name."""
-        return self.attributes.get(attribute_name)
+    def _parse_attributes(self, attributes: List[str]) -> Dict[str, Any]:
+        """Parse attribute values for internal use."""
+        parsed_attributes = {}
+        for attribute in attributes:
+            """Parse an attribute value."""
+            if attribute.startswith("@"):
+                continue
+            elif attribute.startswith("_") and attribute.endswith("_value"):
+                attribute_name: str = attribute[1:-6]
+                print(attribute_name)
+                attribute_ref: EntityReference = EntityReference(
+                    entity_logical_name=self.attributes.get(
+                        f"{attribute}@Microsoft.Dynamics.CRM.lookuplogicalname"
+                    ),
+                    entity_id=uuid.UUID(self.attributes.get(attribute)),
+                    name=self.attributes.get(
+                        f"{attribute}@OData.Community.Display.V1.FormattedValue"
+                    ),
+                )
+                print(attribute_ref)
+                parsed_attributes[attribute_name] = attribute_ref
+            elif (
+                isinstance(self.attributes.get(attribute), int)
+                and f"{attribute}@OData.Community.Display.V1.FormattedValue"
+                in self.attributes
+            ):
+                value = self.attributes.get(attribute)
+                label = self.attributes.get(
+                    f"{attribute}@OData.Community.Display.V1.FormattedValue"
+                )
+                parsed_attributes[attribute] = OptionSet(label=label, value=value)
+            elif f"{self.entity_logical_name}id" == attribute:
+                self.entity_id = uuid.UUID(self.attributes.get(attribute))
+                parsed_attributes[attribute] = self.attributes.get(attribute)
+            else:
+                parsed_attributes[attribute] = self.attributes.get(attribute)
 
-    def try_get_attribute_value(self, attribute_name: str) -> Tuple[bool, Any]:
-        """Try to get the value of an attribute by name."""
-        if attribute_name in self.attributes:
-            return True, self.attributes[attribute_name]
-        else:
-            return False, None
-
-
-@dataclass
-class EntityReference:
-    """
-    Represents a reference to another entity in Dataverse or similar systems.
-    """
-
-    entity_logical_name: str
-    entity_id: uuid.UUID = None
-    name: str = None
-
-    def __post_init__(self) -> None:
-        isValid, validId = validate_guid(self.entity_id)
-        if not isValid:
-            raise Exception("Entity ID is required and must be a valid GUID")
-        else:
-            self.entity_id = validId
-
-    def to_dict(self) -> dict:
-        """Convert EntityReference instance to a dictionary."""
-        return {
-            "id": str(self.entity_id),
-            "logical_name": self.entity_logical_name,
-        }
-
-
-if __name__ == "__main__":
-    entity = Entity(entity_id="123", entity_logical_name="account")
-    entityref = EntityReference(entity_id="456", entity_logical_name="contact")
+        return parsed_attributes
