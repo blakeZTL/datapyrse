@@ -5,6 +5,7 @@ from models.filter_expression import FilterExpression
 from models.link_entity import LinkEntity
 
 
+# TODO: Implement unit testing for this function
 def query_expression_to_fetchxml(query: QueryExpression) -> str:
     # Root element: <fetch>
     fetch = ET.Element(
@@ -49,6 +50,7 @@ def query_expression_to_fetchxml(query: QueryExpression) -> str:
     return ET.tostring(fetch, encoding="unicode")
 
 
+# TODO: Implement unit testing for this function
 def filter_to_fetchxml(filter_expression: FilterExpression) -> ET.Element:
     filter_element = ET.Element(
         "filter", type=filter_expression.filter_operator.lower()
@@ -74,6 +76,7 @@ def filter_to_fetchxml(filter_expression: FilterExpression) -> ET.Element:
     return filter_element
 
 
+# TODO: Implement unit testing for this function
 def link_entity_to_fetchxml(link_entity: LinkEntity) -> ET.Element:
     link_element = ET.Element(
         "link-entity",
