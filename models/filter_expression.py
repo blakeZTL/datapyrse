@@ -1,7 +1,12 @@
 from dataclasses import dataclass, field
 from typing import List
 from models.condition_expression import ConditionExpression
-from models.filter_operator import FilterOperator
+from enum import Enum
+
+
+class FilterOperator(Enum):
+    AND = "AND"
+    OR = "OR"
 
 
 @dataclass

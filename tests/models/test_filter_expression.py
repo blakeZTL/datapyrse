@@ -1,8 +1,6 @@
 import pytest
-from models.condition_expression import ConditionExpression
-from models.condition_operator import ConditionOperator
-from models.filter_expression import FilterExpression
-from models.filter_operator import FilterOperator
+from models.condition_expression import ConditionExpression, ConditionOperator
+from models.filter_expression import FilterExpression, FilterOperator
 
 
 @pytest.fixture

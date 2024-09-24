@@ -1,8 +1,6 @@
-from unittest import mock
 import uuid
-import pytest
 from dataclasses import is_dataclass
-from uuid import uuid4, UUID
+from uuid import uuid4
 from models.entity import Entity
 from models.entity_reference import EntityReference
 from models.option_set import OptionSet

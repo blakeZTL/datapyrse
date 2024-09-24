@@ -2,7 +2,7 @@ from unittest import mock
 import uuid
 import pytest
 from models.column_set import ColumnSet
-from models.condition_operator import ConditionOperator
+from models.condition_expression import ConditionOperator
 from models.entity import Entity
 from models.entity_collection import EntityCollection
 from models.query_expression import QueryExpression

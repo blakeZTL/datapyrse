@@ -1,14 +1,10 @@
 import xml.etree.ElementTree as ET
-
-import pytest
-from models.condition_operator import ConditionOperator
-from models.filter_operator import FilterOperator
 from models.query_expression import QueryExpression
-from models.filter_expression import FilterExpression
-from models.link_entity import LinkEntity
+from models.filter_expression import FilterExpression, FilterOperator
+from models.link_entity import JoinOperator, LinkEntity
 from models.column_set import ColumnSet
-from models.order_expression import OrderExpression
-from models.condition_expression import ConditionExpression
+from models.order_expression import OrderExpression, OrderType
+from models.condition_expression import ConditionExpression, ConditionOperator
 from utils.query_to_fetch import (
     query_expression_to_fetchxml,
     filter_to_fetchxml,
@@ -32,7 +28,7 @@ class TestQueryExpressionToFetchXML:
                     )
                 ],
             ),
-            orders=[OrderExpression(attribute_name="name", order_type="ASC")],
+            orders=[OrderExpression(attribute_name="name", order_type=OrderType.ASC)],
             top_count=50,
         )
 
@@ -122,7 +118,6 @@ class TestFilterToFetchXML:
         assert condition.attrib["value"] == "John"
 
 
-@pytest.mark.skip("Not implemented yet")
 class TestLinkEntityToFetchXML:
 
     def test_link_entity_with_columns(self):
@@ -131,7 +126,7 @@ class TestLinkEntityToFetchXML:
             link_from_attribute_name="contactid",
             link_to_entity_name="account",
             link_to_attribute_name="accountid",
-            join_operator="INNER",
+            join_operator=JoinOperator.INNER,
             columns=ColumnSet(columns=["name", "accountnumber"]),
         )
 
@@ -153,12 +148,14 @@ class TestLinkEntityToFetchXML:
             link_from_attribute_name="contactid",
             link_to_entity_name="account",
             link_to_attribute_name="accountid",
-            join_operator="INNER",
+            join_operator=JoinOperator.INNER,
             link_criteria=FilterExpression(
-                filter_operator="AND",
+                filter_operator=FilterOperator.AND,
                 conditions=[
                     ConditionExpression(
-                        attribute_name="statuscode", operator="Equal", values=[1]
+                        attribute_name="statuscode",
+                        operator=ConditionOperator.EQUAL,
+                        values=[1],
                     )
                 ],
             ),
@@ -170,5 +167,5 @@ class TestLinkEntityToFetchXML:
         assert filter_xml is not None
         condition = filter_xml.find("condition")
         assert condition.attrib["attribute"] == "statuscode"
-        assert condition.attrib["operator"] == "equal"
-        assert condition.find("value").text == "1"
+        assert condition.attrib["operator"] == "eq"
+        assert condition.attrib["value"] == "1"

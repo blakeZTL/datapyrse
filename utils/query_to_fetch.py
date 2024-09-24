@@ -1,6 +1,5 @@
 import xml.etree.ElementTree as ET
-from typing import List, Optional
-from models.condition_operator import ConditionOperator
+from models.condition_expression import ConditionOperator
 from models.query_expression import QueryExpression
 from models.filter_expression import FilterExpression
 from models.link_entity import LinkEntity
@@ -88,12 +87,12 @@ def link_entity_to_fetchxml(link_entity: LinkEntity) -> ET.Element:
         name=link_entity.link_to_entity_name,
         from_=link_entity.link_from_attribute_name,
         to=link_entity.link_to_attribute_name,
-        linktype=link_entity.join_operator.lower(),
+        linktype=link_entity.join_operator.value.lower(),
     )
 
     # Add linked entity columns (if any)
     if link_entity.columns:
-        if link_entity.columns.all_columns:
+        if link_entity.columns.columns == True:
             ET.SubElement(link_element, "all-attributes")
         else:
             for column in link_entity.columns.columns:
