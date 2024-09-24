@@ -1,4 +1,4 @@
-from core import ServiceClient, Entity, Query
+from datapyrse.core import ServiceClient, Entity, Query
 
 __all__ = [
     "ServiceClient",
