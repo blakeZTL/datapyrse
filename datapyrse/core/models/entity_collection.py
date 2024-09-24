@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from core.models.entity import Entity
+from datapyrse.core.models.entity import Entity
 
 
 @dataclass

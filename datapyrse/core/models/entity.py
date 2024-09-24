@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 import logging
 from typing import Dict, Any, List
 import uuid
-from core.models.entity_reference import EntityReference
-from core.models.option_set import OptionSet
+from datapyrse.core.models.entity_reference import EntityReference
+from datapyrse.core.models.option_set import OptionSet
 
 
 @dataclass

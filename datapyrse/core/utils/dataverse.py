@@ -1,6 +1,6 @@
 import logging
 from typing import List
-from core.services.service_client import ServiceClient
+from datapyrse.core.services.service_client import ServiceClient
 import requests
 
 

@@ -1,10 +1,10 @@
 import logging
 import uuid
 from typing import List
-from core.services.service_client import ServiceClient
+from datapyrse.core.services.service_client import ServiceClient
 import requests
-from core.models.entity import Entity
-from core.utils.dataverse import (
+from datapyrse.core.models.entity import Entity
+from datapyrse.core.utils.dataverse import (
     get_entity_collection_name_by_logical_name,
     transform_column_set,
 )

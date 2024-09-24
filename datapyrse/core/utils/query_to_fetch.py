@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET
-from core.models.condition_expression import ConditionOperator
-from core.models.query_expression import QueryExpression
-from core.models.filter_expression import FilterExpression
-from core.models.link_entity import LinkEntity
+from datapyrse.core.models.condition_expression import ConditionOperator
+from datapyrse.core.models.query_expression import QueryExpression
+from datapyrse.core.models.filter_expression import FilterExpression
+from datapyrse.core.models.link_entity import LinkEntity
 
 
 def query_expression_to_fetchxml(query: QueryExpression) -> str:

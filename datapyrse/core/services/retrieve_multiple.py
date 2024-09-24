@@ -1,11 +1,11 @@
 import logging
 from typing import List
 import requests
-from core.services.service_client import ServiceClient
-from core.models.entity import Entity
-from core.models.entity_collection import EntityCollection
-from core.models.query_expression import QueryExpression
-from core.utils.dataverse import (
+from datapyrse.core.services.service_client import ServiceClient
+from datapyrse.core.models.entity import Entity
+from datapyrse.core.models.entity_collection import EntityCollection
+from datapyrse.core.models.query_expression import QueryExpression
+from datapyrse.core.utils.dataverse import (
     get_entity_collection_name_by_logical_name,
 )
 

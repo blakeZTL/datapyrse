@@ -1,7 +1,10 @@
-from core.models.column_set import ColumnSet
-from core.models.link_entity import LinkEntity, JoinOperator
-from core.models.filter_expression import FilterExpression, FilterOperator
-from core.models.condition_expression import ConditionExpression, ConditionOperator
+from datapyrse.core.models.column_set import ColumnSet
+from datapyrse.core.models.link_entity import LinkEntity, JoinOperator
+from datapyrse.core.models.filter_expression import FilterExpression, FilterOperator
+from datapyrse.core.models.condition_expression import (
+    ConditionExpression,
+    ConditionOperator,
+)
 import pytest
 
 

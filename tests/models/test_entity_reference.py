@@ -1,5 +1,5 @@
 from uuid import uuid4
-from core.models.entity_reference import EntityReference
+from datapyrse.core.models.entity_reference import EntityReference
 
 
 def test_entity_reference_initialization():

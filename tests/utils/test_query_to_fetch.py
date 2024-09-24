@@ -1,11 +1,14 @@
 import xml.etree.ElementTree as ET
-from core.models.query_expression import QueryExpression
-from core.models.filter_expression import FilterExpression, FilterOperator
-from core.models.link_entity import JoinOperator, LinkEntity
-from core.models.column_set import ColumnSet
-from core.models.order_expression import OrderExpression, OrderType
-from core.models.condition_expression import ConditionExpression, ConditionOperator
-from core.utils.query_to_fetch import (
+from datapyrse.core.models.query_expression import QueryExpression
+from datapyrse.core.models.filter_expression import FilterExpression, FilterOperator
+from datapyrse.core.models.link_entity import JoinOperator, LinkEntity
+from datapyrse.core.models.column_set import ColumnSet
+from datapyrse.core.models.order_expression import OrderExpression, OrderType
+from datapyrse.core.models.condition_expression import (
+    ConditionExpression,
+    ConditionOperator,
+)
+from datapyrse.core.utils.query_to_fetch import (
     query_expression_to_fetchxml,
     filter_to_fetchxml,
     link_entity_to_fetchxml,

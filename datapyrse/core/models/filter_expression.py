@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List
-from core.models.condition_expression import ConditionExpression
+from datapyrse.core.models.condition_expression import ConditionExpression
 from enum import Enum
 
 

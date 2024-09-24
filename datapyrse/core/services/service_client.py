@@ -3,7 +3,7 @@ import time
 from typing import List
 import uuid
 import msal
-from core.models.query_expression import QueryExpression
+from datapyrse.core.models.query_expression import QueryExpression
 
 
 class ServiceClient:
@@ -76,7 +76,7 @@ class ServiceClient:
         column_set: List[str],
         logger: logging.Logger = None,
     ):
-        from core.services.retrieve import retrieve as retrieve_method
+        from datapyrse.core.services.retrieve import retrieve as retrieve_method
 
         if not logger:
             logger = self.logger
@@ -86,7 +86,7 @@ class ServiceClient:
         )
 
     def retrieve_multiple(self, query: QueryExpression, logger: logging.Logger = None):
-        from core.services.retrieve_multiple import (
+        from datapyrse.core.services.retrieve_multiple import (
             retrieve_multiple as retrieve_multiple_method,
         )
 

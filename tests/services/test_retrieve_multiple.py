@@ -1,12 +1,12 @@
 from unittest import mock
 import uuid
 import pytest
-from core.models.column_set import ColumnSet
-from core.models.condition_expression import ConditionOperator
-from core.models.entity import Entity
-from core.models.entity_collection import EntityCollection
-from core.models.query_expression import QueryExpression
-from core.services.retrieve_multiple import retrieve_multiple
+from datapyrse.core.models.column_set import ColumnSet
+from datapyrse.core.models.condition_expression import ConditionOperator
+from datapyrse.core.models.entity import Entity
+from datapyrse.core.models.entity_collection import EntityCollection
+from datapyrse.core.models.query_expression import QueryExpression
+from datapyrse.core.services.retrieve_multiple import retrieve_multiple
 
 
 @pytest.fixture
@@ -41,7 +41,7 @@ def test_retrieve_multiple_query_expression_invalid(service_client):
 
 
 @mock.patch(
-    "core.services.retrieve_multiple.get_entity_collection_name_by_logical_name"
+    "datapyrse.core.services.retrieve_multiple.get_entity_collection_name_by_logical_name"
 )
 def test_retrieve_multiple_entity_collection_name_not_found(
     mock_get_entity_collection_name_by_logical_name, service_client, query_expression
@@ -53,7 +53,7 @@ def test_retrieve_multiple_entity_collection_name_not_found(
 
 
 @mock.patch(
-    "core.services.retrieve_multiple.get_entity_collection_name_by_logical_name"
+    "datapyrse.core.services.retrieve_multiple.get_entity_collection_name_by_logical_name"
 )
 @mock.patch.object(QueryExpression, "to_fetchxml")
 def test_retrieve_multiple_fetchxml_not_found(
@@ -70,7 +70,7 @@ def test_retrieve_multiple_fetchxml_not_found(
 
 
 @mock.patch(
-    "core.services.retrieve_multiple.get_entity_collection_name_by_logical_name"
+    "datapyrse.core.services.retrieve_multiple.get_entity_collection_name_by_logical_name"
 )
 def test_retrieve_multiple_no_entities_found(
     mock_get_entity_collection_name_by_logical_name, service_client, query_expression
@@ -86,7 +86,7 @@ def test_retrieve_multiple_no_entities_found(
 
 
 @mock.patch(
-    "core.services.retrieve_multiple.get_entity_collection_name_by_logical_name"
+    "datapyrse.core.services.retrieve_multiple.get_entity_collection_name_by_logical_name"
 )
 def test_retieve_multiple_entities_found(
     mock_get_entity_collection_name_by_logical_name, service_client, query_expression

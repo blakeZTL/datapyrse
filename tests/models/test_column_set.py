@@ -1,5 +1,5 @@
 import pytest
-from core.models.column_set import ColumnSet
+from datapyrse.core.models.column_set import ColumnSet
 
 
 def test_empty_column_set():

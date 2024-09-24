@@ -2,9 +2,9 @@ import pytest
 from unittest import mock
 import uuid
 from requests.exceptions import HTTPError
-from core.models.entity_reference import EntityReference
-from core.services.retrieve import retrieve
-from core.models.entity import Entity
+from datapyrse.core.models.entity_reference import EntityReference
+from datapyrse.core.services.retrieve import retrieve
+from datapyrse.core.models.entity import Entity
 
 
 @pytest.fixture
@@ -44,7 +44,9 @@ def test_retrieve_column_set_missing(service_client):
 
 
 # Test when entity collection name cannot be found
-@mock.patch("core.services.retrieve.get_entity_collection_name_by_logical_name")
+@mock.patch(
+    "datapyrse.core.services.retrieve.get_entity_collection_name_by_logical_name"
+)
 def test_retrieve_entity_collection_not_found(
     mock_get_entity_collection, service_client
 ):
@@ -54,8 +56,10 @@ def test_retrieve_entity_collection_not_found(
 
 
 # Test when column set transformation fails
-@mock.patch("core.services.retrieve.get_entity_collection_name_by_logical_name")
-@mock.patch("core.services.retrieve.transform_column_set")
+@mock.patch(
+    "datapyrse.core.services.retrieve.get_entity_collection_name_by_logical_name"
+)
+@mock.patch("datapyrse.core.services.retrieve.transform_column_set")
 def test_retrieve_transform_column_set_failure(
     mock_transform_column_set,
     mock_get_entity_collection,
@@ -69,8 +73,10 @@ def test_retrieve_transform_column_set_failure(
 
 
 # Test successful entity retrieval
-@mock.patch("core.services.retrieve.get_entity_collection_name_by_logical_name")
-@mock.patch("core.services.retrieve.transform_column_set")
+@mock.patch(
+    "datapyrse.core.services.retrieve.get_entity_collection_name_by_logical_name"
+)
+@mock.patch("datapyrse.core.services.retrieve.transform_column_set")
 @mock.patch("requests.get")
 def test_retrieve_success(
     mock_requests_get,
@@ -125,8 +131,10 @@ def test_retrieve_success(
 
 
 # Test when HTTP error is raised
-@mock.patch("core.services.retrieve.get_entity_collection_name_by_logical_name")
-@mock.patch("core.services.retrieve.transform_column_set")
+@mock.patch(
+    "datapyrse.core.services.retrieve.get_entity_collection_name_by_logical_name"
+)
+@mock.patch("datapyrse.core.services.retrieve.transform_column_set")
 @mock.patch("requests.get")
 def test_retrieve_http_error(
     mock_requests_get,
