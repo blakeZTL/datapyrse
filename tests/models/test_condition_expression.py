@@ -1,6 +1,6 @@
 import pytest
-from models.column_set import ColumnSet
-from models.condition_expression import ConditionExpression, ConditionOperator
+from core.models.column_set import ColumnSet
+from core.models.condition_expression import ConditionExpression, ConditionOperator
 
 
 def test_condition_expression():

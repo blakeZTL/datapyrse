@@ -1,12 +1,12 @@
 from unittest import mock
 import uuid
 import pytest
-from models.column_set import ColumnSet
-from models.condition_expression import ConditionOperator
-from models.entity import Entity
-from models.entity_collection import EntityCollection
-from models.query_expression import QueryExpression
-from services.retrieve_multiple import retrieve_multiple
+from core.models.column_set import ColumnSet
+from core.models.condition_expression import ConditionOperator
+from core.models.entity import Entity
+from core.models.entity_collection import EntityCollection
+from core.models.query_expression import QueryExpression
+from core.services.retrieve_multiple import retrieve_multiple
 
 
 @pytest.fixture
@@ -40,7 +40,9 @@ def test_retrieve_multiple_query_expression_invalid(service_client):
         retrieve_multiple(service_client, "query_expression")
 
 
-@mock.patch("services.retrieve_multiple.get_entity_collection_name_by_logical_name")
+@mock.patch(
+    "core.services.retrieve_multiple.get_entity_collection_name_by_logical_name"
+)
 def test_retrieve_multiple_entity_collection_name_not_found(
     mock_get_entity_collection_name_by_logical_name, service_client, query_expression
 ):
@@ -50,7 +52,9 @@ def test_retrieve_multiple_entity_collection_name_not_found(
         retrieve_multiple(service_client, query_expression)
 
 
-@mock.patch("services.retrieve_multiple.get_entity_collection_name_by_logical_name")
+@mock.patch(
+    "core.services.retrieve_multiple.get_entity_collection_name_by_logical_name"
+)
 @mock.patch.object(QueryExpression, "to_fetchxml")
 def test_retrieve_multiple_fetchxml_not_found(
     mock_to_fetchxml,
@@ -65,7 +69,9 @@ def test_retrieve_multiple_fetchxml_not_found(
         retrieve_multiple(service_client, query_expression)
 
 
-@mock.patch("services.retrieve_multiple.get_entity_collection_name_by_logical_name")
+@mock.patch(
+    "core.services.retrieve_multiple.get_entity_collection_name_by_logical_name"
+)
 def test_retrieve_multiple_no_entities_found(
     mock_get_entity_collection_name_by_logical_name, service_client, query_expression
 ):
@@ -79,7 +85,9 @@ def test_retrieve_multiple_no_entities_found(
         assert result.entities == []
 
 
-@mock.patch("services.retrieve_multiple.get_entity_collection_name_by_logical_name")
+@mock.patch(
+    "core.services.retrieve_multiple.get_entity_collection_name_by_logical_name"
+)
 def test_retieve_multiple_entities_found(
     mock_get_entity_collection_name_by_logical_name, service_client, query_expression
 ):

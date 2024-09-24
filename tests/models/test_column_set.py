@@ -1,5 +1,5 @@
 import pytest
-from models.column_set import ColumnSet
+from core.models.column_set import ColumnSet
 
 
 def test_empty_column_set():

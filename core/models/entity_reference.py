@@ -12,7 +12,9 @@ class EntityReference:
     entity_id: uuid.UUID = None
     name: str = None
 
-    def __post_init__(self) -> None: ...
+    def __post_init__(self) -> None:
+        if not self.entity_logical_name:
+            raise ValueError("EntityReference entity_logical_name is required.")
 
     def to_dict(self) -> dict:
         """Convert EntityReference instance to a dictionary."""

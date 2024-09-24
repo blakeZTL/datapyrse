@@ -1,5 +1,5 @@
-from models.entity_collection import EntityCollection
-from models.entity import Entity
+from core.models.entity_collection import EntityCollection
+from core.models.entity import Entity
 
 
 def test_entity_collection_empty_initialization():

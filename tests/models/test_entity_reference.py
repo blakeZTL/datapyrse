@@ -1,5 +1,5 @@
 from uuid import uuid4
-from models.entity_reference import EntityReference
+from core.models.entity_reference import EntityReference
 
 
 def test_entity_reference_initialization():

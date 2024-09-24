@@ -57,7 +57,7 @@ class Entity:
                     continue
 
                 attribute_name: str = attribute[1:-6]
-                self.logger.debug(f"Attribute: {attribute_name}")                
+                self.logger.debug(f"{self._parse_attributes.__name__} - Attribute: {attribute_name}")    
                 self.logger.debug(f"ID: {self.attributes.get(attribute)}")
                 self.logger.debug(f"Logical name: {self.attributes.get(f"{attribute}@Microsoft.Dynamics.CRM.lookuplogicalname")}")
                 self.logger.debug(f"Name: {self.attributes.get(f"{attribute}@OData.Community.Display.V1.FormattedValue")}")

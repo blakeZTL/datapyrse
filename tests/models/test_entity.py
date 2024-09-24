@@ -1,9 +1,9 @@
 import uuid
 from dataclasses import is_dataclass
 from uuid import uuid4
-from models.entity import Entity
-from models.entity_reference import EntityReference
-from models.option_set import OptionSet
+from core.models.entity import Entity
+from core.models.entity_reference import EntityReference
+from core.models.option_set import OptionSet
 
 
 # Test initialization and default attributes
