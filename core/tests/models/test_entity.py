@@ -124,7 +124,6 @@ def test_parse_entity_reference():
     }
     entity = Entity(entity_logical_name="account", attributes=attributes)
 
-    print(entity.attributes)
     assert entity["ownerid"] == expected_ref
 
 

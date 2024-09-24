@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
-from models.filter_expression import FilterExpression
-from models.link_entity import LinkEntity
-from models.order_expression import OrderExpression
-from models.column_set import ColumnSet
+from core.models.filter_expression import FilterExpression
+from core.models.link_entity import LinkEntity
+from core.models.order_expression import OrderExpression
+from core.models.column_set import ColumnSet
 
 
 @dataclass
@@ -51,6 +51,6 @@ class QueryExpression:
             raise Exception("Distinct must be a boolean")
 
     def to_fetchxml(self) -> str:
-        from utils.query_to_fetch import query_expression_to_fetchxml
+        from core.utils.query_to_fetch import query_expression_to_fetchxml
 
         return query_expression_to_fetchxml(self)

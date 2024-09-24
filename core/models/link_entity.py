@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
-from models.column_set import ColumnSet
-from models.filter_expression import FilterExpression
+from core.models.column_set import ColumnSet
+from core.models.filter_expression import FilterExpression
 from enum import Enum
 
 

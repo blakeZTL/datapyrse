@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List
-from models.condition_expression import ConditionExpression
+from core.models.condition_expression import ConditionExpression
 from enum import Enum
 
 

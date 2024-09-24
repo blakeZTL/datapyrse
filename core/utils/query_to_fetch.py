@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET
-from models.condition_expression import ConditionOperator
-from models.query_expression import QueryExpression
-from models.filter_expression import FilterExpression
-from models.link_entity import LinkEntity
+from core.models.condition_expression import ConditionOperator
+from core.models.query_expression import QueryExpression
+from core.models.filter_expression import FilterExpression
+from core.models.link_entity import LinkEntity
 
 
 def query_expression_to_fetchxml(query: QueryExpression) -> str:
@@ -80,7 +80,6 @@ def filter_to_fetchxml(filter_expression: FilterExpression) -> ET.Element:
     return filter_element
 
 
-# TODO: Implement unit testing for this function
 def link_entity_to_fetchxml(link_entity: LinkEntity) -> ET.Element:
     link_element = ET.Element(
         "link-entity",

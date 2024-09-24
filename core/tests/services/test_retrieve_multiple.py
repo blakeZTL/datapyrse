@@ -106,7 +106,6 @@ def test_retieve_multiple_entities_found(
         result = retrieve_multiple(service_client, query_expression)
 
         assert len(result.entities) == 2
-        print(result.entities[0].attributes)
         assert result.entities[0].attributes == {
             "accountid": str(account1.entity_id),
             "name": "Account 1",

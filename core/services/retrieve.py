@@ -1,10 +1,10 @@
 import logging
 import uuid
 from typing import List
-from core import ServiceClient
+from core.services.service_client import ServiceClient
 import requests
-from models.entity import Entity
-from utils.dataverse import (
+from core.models.entity import Entity
+from core.utils.dataverse import (
     get_entity_collection_name_by_logical_name,
     transform_column_set,
 )
@@ -15,6 +15,7 @@ def retrieve(
     entity_logical_name: str,
     entity_id: uuid.UUID,
     column_set: List[str],
+    logger: logging.Logger = None,
 ) -> Entity:
     if not service_client.IsReady:
         raise Exception("Service client is not ready")
@@ -28,21 +29,26 @@ def retrieve(
     if not column_set:
         raise Exception("Column set is required")
 
+    if not logger:
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.WARNING)
+
     entity_plural_name = get_entity_collection_name_by_logical_name(
         service_client, entity_logical_name
     )
     if not entity_plural_name:
         raise Exception("Entity collection name not found")
 
-    parsed_column_set = transform_column_set(
-        service_client, entity_logical_name, column_set
-    )
-    if not parsed_column_set:
-        raise Exception("Failed to transform column set")
+    select: str = None
+    if isinstance(column_set, list):
+        parsed_column_set: List[str] = transform_column_set(
+            service_client, entity_logical_name, column_set
+        )
+        if not parsed_column_set:
+            raise Exception("Failed to transform column set")
+        select = ",".join(parsed_column_set)
 
-    select = ",".join(parsed_column_set)
-
-    logging.debug("Retrieving entity")
+    logger.debug("Retrieving entity")
     endpoint = f"api/data/v9.2/{entity_plural_name}({str(entity_id)})"
     headers = {
         "Authorization": f"Bearer {service_client.get_access_token()}",
@@ -52,8 +58,12 @@ def retrieve(
         "Content-Type": "application/json; charset=utf-8",
         "Prefer": "odata.include-annotations=*",
     }
+    url: str = f"{service_client.resource_url}/{endpoint}"
+    if select:
+        url = f"{url}?$select={select}"
+
     response = requests.get(
-        f"{service_client.resource_url}/{endpoint}?$select={select}",
+        url,
         headers=headers,
     )
     response.raise_for_status()
@@ -61,5 +71,6 @@ def retrieve(
         entity_id=entity_id,
         entity_logical_name=entity_logical_name,
         attributes=response.json(),
+        logger=logger,
     )
     return entity
