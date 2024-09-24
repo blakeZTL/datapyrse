@@ -4,3 +4,4 @@ venv
 .pytest_cache
 example.ipynb
 *.egg-info
+dist
