@@ -1,0 +1,42 @@
+# pyproject.toml
+
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "datapyrse"
+version = "0.1.0"
+description = "A package used to mimic the functionality of the Dataverse SDK."
+readme = "README.md"
+authors = [{ name = "Blake Bradford" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["Dataverse", "Power Platform", "Microsoft", "SDK"]
+dependencies = [
+    "certifi==2024.8.30",
+    "cffi==1.17.1",
+    "charset-normalizer==3.3.2",
+    "colorama==0.4.6",
+    "cryptography==43.0.1",
+    "idna==3.10",
+    "iniconfig==2.0.0",
+    "msal==1.31.0",
+    "packaging==24.1",
+    "pluggy==1.5.0",
+    "pycparser==2.22",
+    "PyJWT==2.9.0",
+    "requests==2.32.3",
+    "urllib3==2.2.3"
+]
+requires-python = ">=3.12"
+
+[project.optional-dependencies]
+dev = ["black", "bumpver", "isort", "pip-tools", "pytest"]
+
+[project.urls]
+Homepage = "https://github.com/blakeZTL/datapyrse"
