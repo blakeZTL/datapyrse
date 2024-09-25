@@ -5,7 +5,6 @@ from datapyrse.core.services.service_client import ServiceClient
 import requests
 from datapyrse.core.models.entity import Entity
 from datapyrse.core.utils.dataverse import (
-    get_entity_collection_name_by_logical_name,
     parse_entity_to_web_api_body,
 )
 
@@ -35,16 +34,26 @@ class CreateRequest:
             raise Exception("Entity logical name is required")
 
         logger.debug("Creating entity")
-        entity_plural_name = get_entity_collection_name_by_logical_name(
-            service_client, entity.entity_logical_name
+        entity_plural_name = next(
+            (
+                data.logical_collection_name
+                for data in service_client.metadata.entities
+                if data.logical_name == entity.entity_logical_name
+            ),
+            None,
         )
         if not entity_plural_name:
             logger.error("Entity collection name not found")
+            logger.error(f"Entity logical name: {entity.entity_logical_name}")
+            logger.error(f"Entities: {service_client.metadata.entities}")
             raise Exception("Entity collection name not found")
         logger.debug(f"Entity plural name: {entity_plural_name}")
 
         parsed_entity_data: dict = parse_entity_to_web_api_body(
-            entity, service_client, logger
+            entity,
+            service_client,
+            logger,
+            entity_logical_collection_name=entity_plural_name,
         )
 
         endpoint = f"api/data/v9.2/{entity_plural_name}"

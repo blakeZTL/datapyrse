@@ -1,12 +1,10 @@
+import logging
 from typing import List
 from unittest import mock
 import pytest
 import requests
-from datapyrse.core.models.entity_metadata import (
-    EntityMetadata,
-    EntityMetadataResponse,
-)
-from datapyrse.core.utils.dataverse import get_entity_metadata
+from datapyrse.core.models.entity_metadata import *
+from datapyrse.core.utils.dataverse import get_metadata
 
 
 @pytest.fixture
@@ -18,75 +16,82 @@ def service_client():
     return service_client
 
 
-@mock.patch("datapyrse.core.utils.dataverse.get_entity_metadata")
-@mock.patch("requests.get")
-def test_get_entity_metadata_success(
-    mock_requests_get, mock_get_entity_metadata, service_client
-):
+@pytest.fixture
+def logger():
+    return mock.Mock(logging.Logger)
 
-    mock_get_entity_metadata.return_value = {
-        "value": [
-            {
-                "LogicalName": "account",
-                "AttributeType": "string",
-                "SchemaName": "Account",
+
+def test_get_metadata_success(service_client, logger):
+    mock_metadata = mock.Mock(OrgMetadata)
+    mock_metadata.entities.count = 5
+    with (
+        mock.patch("requests.get") as mock_get,
+        mock.patch(
+            "datapyrse.core.models.entity_metadata.OrgMetadata.from_json",
+            return_value=mock_metadata,
+        ),
+    ):
+        mock_response = mock.Mock()
+        mock_response.json.return_value = {"value": [{"LogicalName": "account"}]}
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
+
+        metadata = get_metadata(service_client, logger)
+
+        assert metadata == mock_metadata
+        mock_get.assert_called_once_with(
+            f"{service_client.resource_url}/api/data/v9.2/EntityDefinitions?$expand=Attributes($select=LogicalName,AttributeType,SchemaName)",
+            headers={
+                "Authorization": "Bearer mock_access_token",
+                "OData-MaxVersion": "4.0",
+                "OData-Version": "4.0",
+                "Accept": "application/json",
+                "Content-Type": "application/json; charset=utf-8",
             },
-            {
-                "LogicalName": "contact",
-                "AttributeType": "integer",
-                "SchemaName": "Contact",
-            },
-        ]
-    }
-
-    mock_requests_get.return_value.ok = True
-    mock_requests_get.return_value.json.return_value = (
-        mock_get_entity_metadata.return_value
-    )
-
-    entity_name = "account"
-    result = get_entity_metadata(entity_name, service_client)
-
-    # Assertions
-    assert len(result) == 2
-    assert result[0].logical_name == "account"
-    assert result[0].attribute_type == "string"
-    assert result[0].schema_name == "Account"
-    assert result[1].logical_name == "contact"
-    assert result[1].attribute_type == "integer"
-    assert result[1].schema_name == "Contact"
-
-    # Verify if the correct endpoint and headers were used
-    expected_url = f"https://example.crm.dynamics.com/api/data/v9.2/EntityDefinitions(LogicalName='account')/Attributes?$select=LogicalName,AttributeType,SchemaName"
-    requests.get.assert_called_once_with(
-        expected_url,
-        headers={
-            "Authorization": "Bearer mock_access_token",
-            "OData-MaxVersion": "4.0",
-            "OData-Version": "4.0",
-            "Accept": "application/json",
-            "Content-Type": "application/json; charset=utf-8",
-        },
-    )
-    for res in result:
-        assert isinstance(res, EntityMetadata)
+        )
+        logger.debug.assert_called_once_with("Metadata fetched: 5")
 
 
-@mock.patch("datapyrse.core.utils.dataverse.get_entity_metadata")
-@mock.patch("requests.get")
-def test_get_entity_metadata_http_error(
-    mock_requests_get, mock_get_entity_metadata, service_client
-):
-    mock_response = mock.Mock()
-    mock_response.ok = False
-    mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
-        "Mocked HTTP Error"
-    )
+def test_get_metadata_no_metadata(service_client, logger):
+    with mock.patch("requests.get") as mock_get:
+        mock_response = mock.Mock()
+        mock_response.json.return_value = {"value": []}
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
 
-    mock_requests_get.return_value = mock_response
+        with pytest.raises(Exception, match="No metadata found"):
+            get_metadata(service_client, logger)
 
-    entity_name = "account"
+        logger.error.assert_called_once_with("No metadata found")
 
-    # Expecting the function to raise an HTTPError
-    with pytest.raises(requests.exceptions.HTTPError, match="Mocked HTTP Error"):
-        get_entity_metadata(entity_name, service_client)
+
+def test_get_metadata_failed_request(service_client, logger):
+    with mock.patch("requests.get") as mock_get:
+        mock_response = mock.Mock()
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+            "404 Client Error"
+        )
+        mock_get.return_value = mock_response
+
+        with pytest.raises(requests.exceptions.HTTPError, match="404 Client Error"):
+            get_metadata(service_client, logger)
+
+        mock_get.assert_called_once()
+
+
+def test_get_metadata_no_logger(service_client):
+    with (
+        mock.patch("requests.get") as mock_get,
+        mock.patch(
+            "datapyrse.core.models.entity_metadata.OrgMetadata.from_json",
+        ) as mock_metadata,
+    ):
+        mock_response = mock.Mock()
+        mock_response.json.return_value = {"value": [{"LogicalName": "account"}]}
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
+
+        metadata = get_metadata(service_client)
+
+        assert metadata is not None
+        mock_get.assert_called_once()
