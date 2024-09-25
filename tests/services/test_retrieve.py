@@ -2,6 +2,7 @@ import pytest
 from unittest import mock
 import uuid
 from requests.exceptions import HTTPError
+from datapyrse.core.models.entity_metadata import *
 from datapyrse.core.models.entity_reference import EntityReference
 from datapyrse.core.services.retrieve import retrieve
 from datapyrse.core.models.entity import Entity
@@ -13,6 +14,37 @@ def service_client():
     service_client.IsReady = True
     service_client.get_access_token.return_value = "mock_access_token"
     service_client.resource_url = "https://example.crm.dynamics.com"
+    service_client.metadata = OrgMetadata(
+        entities=[
+            EntityMetadata(
+                logical_name="account",
+                logical_collection_name="accounts",
+                attributes=[
+                    AttributeMetadata(
+                        logical_name="name",
+                        attribute_type="string",
+                        schema_name="Name",
+                    ),
+                    AttributeMetadata(
+                        logical_name="ownerid",
+                        attribute_type="lookup",
+                        schema_name="Owner",
+                    ),
+                ],
+            ),
+            EntityMetadata(
+                logical_name="systemuser",
+                logical_collection_name="systemusers",
+                attributes=[
+                    AttributeMetadata(
+                        logical_name="fullname",
+                        attribute_type="string",
+                        schema_name="FullName",
+                    ),
+                ],
+            ),
+        ],
+    )
     return service_client
 
 
@@ -39,52 +71,54 @@ def test_retrieve_entity_id_missing(service_client):
 
 # Test when column_set is missing
 def test_retrieve_column_set_missing(service_client):
+
     with pytest.raises(Exception, match="Column set is required"):
         retrieve(service_client, "account", uuid.uuid4(), [])
 
 
-# Test when entity collection name cannot be found
-@mock.patch(
-    "datapyrse.core.services.retrieve.get_entity_collection_name_by_logical_name"
-)
-def test_retrieve_entity_collection_not_found(
-    mock_get_entity_collection, service_client
-):
-    mock_get_entity_collection.return_value = None
+def test_retrieve_entity_collection_not_found(service_client):
+    service_client.metadata = OrgMetadata(
+        entities=[
+            EntityMetadata(
+                logical_name="account",
+                logical_collection_name=None,
+                attributes=[
+                    AttributeMetadata(
+                        logical_name="name",
+                        attribute_type="string",
+                        schema_name="Name",
+                    ),
+                    AttributeMetadata(
+                        logical_name="ownerid",
+                        attribute_type="lookup",
+                        schema_name="Owner",
+                    ),
+                ],
+            ),
+        ],
+    )
     with pytest.raises(Exception, match="Entity collection name not found"):
         retrieve(service_client, "account", uuid.uuid4(), ["name"])
 
 
-# Test when column set transformation fails
-@mock.patch(
-    "datapyrse.core.services.retrieve.get_entity_collection_name_by_logical_name"
-)
 @mock.patch("datapyrse.core.services.retrieve.transform_column_set")
 def test_retrieve_transform_column_set_failure(
     mock_transform_column_set,
-    mock_get_entity_collection,
     service_client,
 ):
-    mock_get_entity_collection.return_value = "accounts"
     mock_transform_column_set.return_value = None
 
     with pytest.raises(Exception, match="Failed to transform column set"):
         retrieve(service_client, "account", uuid.uuid4(), ["name"])
 
 
-# Test successful entity retrieval
-@mock.patch(
-    "datapyrse.core.services.retrieve.get_entity_collection_name_by_logical_name"
-)
 @mock.patch("datapyrse.core.services.retrieve.transform_column_set")
 @mock.patch("requests.get")
 def test_retrieve_success(
     mock_requests_get,
     mock_transform_column_set,
-    mock_get_entity_collection,
     service_client,
 ):
-    mock_get_entity_collection.return_value = "accounts"
     mock_transform_column_set.return_value = ["name", "_ownerid_value"]
 
     owner_guid = uuid.uuid4()
@@ -130,19 +164,13 @@ def test_retrieve_success(
     )
 
 
-# Test when HTTP error is raised
-@mock.patch(
-    "datapyrse.core.services.retrieve.get_entity_collection_name_by_logical_name"
-)
 @mock.patch("datapyrse.core.services.retrieve.transform_column_set")
 @mock.patch("requests.get")
 def test_retrieve_http_error(
     mock_requests_get,
     mock_transform_column_set,
-    mock_get_entity_collection,
     service_client,
 ):
-    mock_get_entity_collection.return_value = "accounts"
     mock_transform_column_set.return_value = ["name", "_ownerid_value"]
 
     # Mock the GET request to raise an HTTP error

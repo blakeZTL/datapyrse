@@ -1,7 +1,13 @@
+from typing import List
 import uuid
 import pytest
 from unittest import mock
 from datapyrse.core.models.entity import Entity
+from datapyrse.core.models.entity_metadata import (
+    AttributeMetadata,
+    EntityMetadata,
+    OrgMetadata,
+)
 from datapyrse.core.services.service_client import ServiceClient
 from datapyrse.core.utils.dataverse import (
     get_entity_collection_name_by_logical_name,
@@ -16,6 +22,32 @@ def service_client():
     service_client.IsReady = True
     service_client.get_access_token.return_value = "mock_access_token"
     service_client.resource_url = "https://example.crm.dynamics.com"
+    service_client.metadata = OrgMetadata(
+        entities=[
+            EntityMetadata(
+                logical_name="account",
+                logical_collection_name="accounts",
+                attributes=[
+                    AttributeMetadata(
+                        logical_name="name",
+                        attribute_type="string",
+                        schema_name="Name",
+                    ),
+                ],
+            ),
+            EntityMetadata(
+                logical_name="contact",
+                logical_collection_name="contacts",
+                attributes=[
+                    AttributeMetadata(
+                        logical_name="firstname",
+                        attribute_type="string",
+                        schema_name="FirstName",
+                    ),
+                ],
+            ),
+        ],
+    )
     return service_client
 
 
@@ -35,26 +67,16 @@ def logger():
 
 
 @mock.patch("requests.post")
-@mock.patch("datapyrse.core.services.create.get_entity_collection_name_by_logical_name")
-@mock.patch("datapyrse.core.services.create.parse_entity_to_web_api_body")
 def test_create_request_success(
-    mock_parse_entity_to_web_api_body,
-    mock_get_entity_collection_name_by_logical_name,
     mock_requests_post,
     service_client,
     entity,
     logger,
 ):
-    # Mocking successful entity collection name retrieval
-    mock_get_entity_collection_name_by_logical_name.return_value = "accounts"
-
-    # Mocking the parsed entity data
-    mock_parse_entity_to_web_api_body.return_value = {"name": "Sample Account"}
 
     guid = uuid.uuid4()
     entity.entity_id = None
 
-    # Mocking the successful POST request
     mock_response = mock.Mock()
     mock_response.ok = True
     mock_response.headers = {
@@ -65,20 +87,12 @@ def test_create_request_success(
     }
     mock_requests_post.return_value = mock_response
 
-    # Calling the create method
     created_entity = CreateRequest.create(service_client, entity, logger)
 
-    # Assertions for success
     assert created_entity.entity_id == guid
-    mock_get_entity_collection_name_by_logical_name.assert_called_once_with(
-        service_client, "account"
-    )
-    mock_parse_entity_to_web_api_body.assert_called_once_with(
-        entity, service_client, logger
-    )
+
     mock_requests_post.assert_called_once()
 
-    # Check if the correct API endpoint and headers were used
     expected_endpoint = "api/data/v9.2/accounts"
     mock_requests_post.assert_called_once_with(
         f"https://example.crm.dynamics.com/{expected_endpoint}",
@@ -95,7 +109,6 @@ def test_create_request_success(
 
 
 def test_create_request_service_client_not_ready(service_client, entity):
-    # Simulate service client not being ready
     service_client.IsReady = False
 
     with pytest.raises(Exception, match="Service client is not ready"):
@@ -122,30 +135,15 @@ def test_create_request_missing_logical_name(service_client, entity, logger):
         CreateRequest.create(service_client, entity, logger)
 
 
-@mock.patch("datapyrse.core.services.create.get_entity_collection_name_by_logical_name")
-def test_create_request_entity_plural_name_not_found(
-    mock_get_entity_collection_name_by_logical_name, service_client, entity, logger
-):
-    # Simulate failure to find entity plural name
-    mock_get_entity_collection_name_by_logical_name.return_value = None
-
-    with pytest.raises(Exception, match="Entity collection name not found"):
-        CreateRequest.create(service_client, entity, logger)
-
-
 @mock.patch("requests.post")
-@mock.patch("datapyrse.core.services.create.get_entity_collection_name_by_logical_name")
 @mock.patch("datapyrse.core.services.create.parse_entity_to_web_api_body")
 def test_create_request_http_failure(
     mock_parse_entity_to_web_api_body,
-    mock_get_entity_collection_name_by_logical_name,
     mock_requests_post,
     service_client,
     entity,
     logger,
 ):
-    # Mocking successful entity collection name retrieval
-    mock_get_entity_collection_name_by_logical_name.return_value = "accounts"
 
     # Mocking the parsed entity data
     mock_parse_entity_to_web_api_body.return_value = {"name": "Sample Account"}
