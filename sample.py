@@ -26,3 +26,12 @@ for ent in entities.entities:
 
 # Retrieve a single entity
 entity: Entity = service.retrieve_single("new_tablename", uuid.UUID("YOUR_GUID"))
+
+# Create a new entity
+new_entity: Entity = Entity("new_tablename")
+new_entity["new_name"] = "New Entity"
+
+user_id: uuid.UUID = uuid.UUID("USER_GUID")
+new_entity["ownerid"] = EntityReference("systemuser", user_id)
+
+service.create(new_entity)
