@@ -5,6 +5,7 @@ import uuid
 import msal
 from datapyrse.core.models.entity import Entity
 from datapyrse.core.models.query_expression import QueryExpression
+from datapyrse.core.models.entity_metadata import OrgMetadata
 
 
 class ServiceClient:
@@ -16,6 +17,7 @@ class ServiceClient:
         client_id: str = None,
         scope=None,
         prompt=None,
+        metadata: OrgMetadata = None,
         logger: logging.Logger = None,
     ) -> None:
         self.client_id = client_id or "51f81489-12ee-4a9e-aaae-a2591f45987d"
@@ -31,7 +33,8 @@ class ServiceClient:
         self.token_expiry = None
         self.IsReady = False
         self.logger = logger
-        self.token = self.acquire_token()
+        self.token = self._acquire_token()
+        self.metadata = self._get_metadata()
 
     def __post_init__(self):
         if not self.logger:
@@ -40,7 +43,15 @@ class ServiceClient:
         if self.access_token and self.token_expiry and time.time() > self.token_expiry:
             self.IsReady = True
 
-    def acquire_token(self) -> None:
+        self.logger.debug("Service client initialized. Getting metadata...")
+
+    def _get_metadata(self) -> OrgMetadata:
+        from datapyrse.core.utils.dataverse import get_metadata
+
+        self.logger.debug("Getting metadata")
+        return get_metadata(self, self.logger)
+
+    def _acquire_token(self) -> None:
         self.IsReady = False
         self.logger.debug("Acquiring token")
         result = None
@@ -65,7 +76,7 @@ class ServiceClient:
             self.token_expiry and time.time() > self.token_expiry
         ):
             self.logger.debug("Acquiring new token")
-            self.acquire_token()
+            self._acquire_token()
         self.logger.debug("Returning access token")
         self.IsReady = True
         return self.access_token

@@ -5,7 +5,6 @@ from datapyrse.core.services.service_client import ServiceClient
 import requests
 from datapyrse.core.models.entity import Entity
 from datapyrse.core.utils.dataverse import (
-    get_entity_collection_name_by_logical_name,
     transform_column_set,
 )
 
@@ -33,8 +32,13 @@ def retrieve(
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.WARNING)
 
-    entity_plural_name = get_entity_collection_name_by_logical_name(
-        service_client, entity_logical_name
+    entity_plural_name = next(
+        (
+            data.logical_collection_name
+            for data in service_client.metadata.entities
+            if data.logical_name == entity_logical_name
+        ),
+        None,
     )
     if not entity_plural_name:
         raise Exception("Entity collection name not found")

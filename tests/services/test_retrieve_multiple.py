@@ -5,6 +5,11 @@ from datapyrse.core.models.column_set import ColumnSet
 from datapyrse.core.models.condition_expression import ConditionOperator
 from datapyrse.core.models.entity import Entity
 from datapyrse.core.models.entity_collection import EntityCollection
+from datapyrse.core.models.entity_metadata import (
+    AttributeMetadata,
+    EntityMetadata,
+    OrgMetadata,
+)
 from datapyrse.core.models.query_expression import QueryExpression
 from datapyrse.core.services.retrieve_multiple import retrieve_multiple
 
@@ -15,6 +20,32 @@ def service_client():
     service_client.IsReady = True
     service_client.get_access_token.return_value = "mock_access_token"
     service_client.resource_url = "https://example.crm.dynamics.com"
+    service_client.metadata = OrgMetadata(
+        entities=[
+            EntityMetadata(
+                logical_name="account",
+                logical_collection_name="accounts",
+                attributes=[
+                    AttributeMetadata(
+                        logical_name="name",
+                        attribute_type="string",
+                        schema_name="Name",
+                    ),
+                ],
+            ),
+            EntityMetadata(
+                logical_name="contact",
+                logical_collection_name="contacts",
+                attributes=[
+                    AttributeMetadata(
+                        logical_name="firstname",
+                        attribute_type="string",
+                        schema_name="FirstName",
+                    ),
+                ],
+            ),
+        ],
+    )
     return service_client
 
 
@@ -40,42 +71,53 @@ def test_retrieve_multiple_query_expression_invalid(service_client):
         retrieve_multiple(service_client, "query_expression")
 
 
-@mock.patch(
-    "datapyrse.core.services.retrieve_multiple.get_entity_collection_name_by_logical_name"
-)
 def test_retrieve_multiple_entity_collection_name_not_found(
-    mock_get_entity_collection_name_by_logical_name, service_client, query_expression
+    service_client, query_expression
 ):
-    mock_get_entity_collection_name_by_logical_name.return_value = None
+    service_client.metadata = OrgMetadata(
+        entities=[
+            EntityMetadata(
+                logical_name="account",
+                logical_collection_name=None,
+                attributes=[
+                    AttributeMetadata(
+                        logical_name="name",
+                        attribute_type="string",
+                        schema_name="Name",
+                    ),
+                ],
+            ),
+            EntityMetadata(
+                logical_name="contact",
+                logical_collection_name="contacts",
+                attributes=[
+                    AttributeMetadata(
+                        logical_name="firstname",
+                        attribute_type="string",
+                        schema_name="FirstName",
+                    ),
+                ],
+            ),
+        ],
+    )
 
     with pytest.raises(Exception, match="Entity collection name not found"):
         retrieve_multiple(service_client, query_expression)
 
 
-@mock.patch(
-    "datapyrse.core.services.retrieve_multiple.get_entity_collection_name_by_logical_name"
-)
 @mock.patch.object(QueryExpression, "to_fetchxml")
 def test_retrieve_multiple_fetchxml_not_found(
     mock_to_fetchxml,
-    mock_get_entity_collection_name_by_logical_name,
     service_client,
     query_expression,
 ):
     mock_to_fetchxml.return_value = None
-    mock_get_entity_collection_name_by_logical_name.return_value = "accounts"
 
     with pytest.raises(Exception, match="Failed to parse query expression"):
         retrieve_multiple(service_client, query_expression)
 
 
-@mock.patch(
-    "datapyrse.core.services.retrieve_multiple.get_entity_collection_name_by_logical_name"
-)
-def test_retrieve_multiple_no_entities_found(
-    mock_get_entity_collection_name_by_logical_name, service_client, query_expression
-):
-    mock_get_entity_collection_name_by_logical_name.return_value = "accounts"
+def test_retrieve_multiple_no_entities_found(service_client, query_expression):
 
     with mock.patch("requests.get") as mock_get:
         mock_get.return_value.json.return_value = {"value": []}
@@ -85,13 +127,7 @@ def test_retrieve_multiple_no_entities_found(
         assert result.entities == []
 
 
-@mock.patch(
-    "datapyrse.core.services.retrieve_multiple.get_entity_collection_name_by_logical_name"
-)
-def test_retieve_multiple_entities_found(
-    mock_get_entity_collection_name_by_logical_name, service_client, query_expression
-):
-    mock_get_entity_collection_name_by_logical_name.return_value = "accounts"
+def test_retieve_multiple_entities_found(service_client, query_expression):
 
     account1 = Entity(
         entity_id=uuid.uuid4(),

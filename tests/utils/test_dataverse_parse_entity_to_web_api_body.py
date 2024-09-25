@@ -3,7 +3,12 @@ import uuid
 import pytest
 from unittest import mock
 from datapyrse.core.models.entity import Entity, EntityReference, OptionSet
-from datapyrse.core.models.entity_metadata import EntityMetadata
+from datapyrse.core.models.entity_metadata import (
+    AttributeMetadata,
+    EntityMetadata,
+    OrgMetadata,
+)
+from datapyrse.core.services.service_client import ServiceClient
 from datapyrse.core.utils.dataverse import (
     parse_entity_to_web_api_body,
     get_entity_metadata,
@@ -12,8 +17,45 @@ from datapyrse.core.utils.dataverse import (
 
 @pytest.fixture
 def service_client():
-    service_client = mock.Mock()
+    service_client = mock.Mock(spec=ServiceClient)
     service_client.IsReady = True
+    service_client.metadata = OrgMetadata(
+        entities=[
+            EntityMetadata(
+                logical_name="account",
+                logical_collection_name="accounts",
+                attributes=[
+                    AttributeMetadata(
+                        logical_name="primarycontactid",
+                        attribute_type="Lookup",
+                        schema_name="PrimaryContactId",
+                    ),
+                    AttributeMetadata(
+                        logical_name="name",
+                        attribute_type="String",
+                        schema_name="Name",
+                    ),
+                    AttributeMetadata(
+                        logical_name="choice",
+                        attribute_type="Picklist",
+                        schema_name="Choice",
+                    ),
+                ],
+            ),
+            EntityMetadata(
+                logical_name="contact",
+                logical_collection_name="contacts",
+                attributes=[
+                    AttributeMetadata(
+                        logical_name="firstname",
+                        attribute_type="String",
+                        schema_name="FirstName",
+                    ),
+                ],
+            ),
+        ]
+    )
+
     return service_client
 
 
@@ -38,39 +80,13 @@ def entity():
     return entity
 
 
-@mock.patch("datapyrse.core.utils.dataverse.get_entity_metadata")
-@mock.patch("datapyrse.core.utils.dataverse.get_entity_collection_name_by_logical_name")
 def test_parse_entity_to_web_api_body_success(
-    mock_get_entity_collection_name_by_logical_name,
-    mock_get_entity_metadata,
     service_client,
     entity,
     logger,
 ):
-    # Mock the entity metadata
-    mock_get_entity_metadata.return_value = [
-        EntityMetadata(
-            logical_name="primarycontactid",
-            attribute_type="Lookup",
-            schema_name="PrimaryContactId",
-        ),
-        EntityMetadata(
-            logical_name="name",
-            attribute_type="String",
-            schema_name="Name",
-        ),
-        EntityMetadata(
-            logical_name="choice",
-            attribute_type="Picklist",
-            schema_name="Choice",
-        ),
-    ]
-
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
-
-    # Mock the collection name lookup
-    mock_get_entity_collection_name_by_logical_name.return_value = "contacts"
 
     # Mock entity reference
     entity.attributes["primarycontactid"].entity_logical_name = "contact"
@@ -83,12 +99,6 @@ def test_parse_entity_to_web_api_body_success(
     assert api_body["name"] == "Sample Account"
     assert api_body["PrimaryContactId@odata.bind"] == "/contacts(12345)"
     assert api_body["choice"] == 1
-
-    # Ensure that get_entity_metadata and get_entity_collection_name_by_logical_name were called
-    mock_get_entity_metadata.assert_called_once_with("account", service_client)
-    mock_get_entity_collection_name_by_logical_name.assert_called_once_with(
-        service_client, "contact"
-    )
 
 
 def test_parse_entity_to_web_api_body_service_not_ready(service_client, entity, logger):
@@ -118,13 +128,31 @@ def test_parse_entity_to_web_api_body_metadata_not_found(
         parse_entity_to_web_api_body(entity, service_client, logger)
 
 
-@mock.patch("datapyrse.core.utils.dataverse.get_entity_metadata")
 def test_parse_entity_to_web_api_body_attribute_metadata_not_found(
-    mock_get_entity_metadata, service_client, entity, logger
+    service_client, entity, logger
 ):
-    # Simulate entity metadata missing for a particular attribute
-    mock_get_entity_metadata.return_value = [
-        EntityMetadata(logical_name="name", attribute_type="String", schema_name="Name")
+    service_client.metadata.entities = [
+        EntityMetadata(
+            logical_name="account",
+            logical_collection_name="accounts",
+            attributes=[
+                AttributeMetadata(
+                    logical_name=None,
+                    attribute_type="Lookup",
+                    schema_name="PrimaryContactId",
+                ),
+                AttributeMetadata(
+                    logical_name="name",
+                    attribute_type="String",
+                    schema_name="Name",
+                ),
+                AttributeMetadata(
+                    logical_name="choice",
+                    attribute_type="Picklist",
+                    schema_name="Choice",
+                ),
+            ],
+        ),
     ]
 
     entity.attributes["primarycontactid"].logical_name = "primarycontactid"
