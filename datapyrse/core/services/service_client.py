@@ -3,6 +3,7 @@ import time
 from typing import List
 import uuid
 import msal
+from datapyrse.core.models.entity import Entity
 from datapyrse.core.models.query_expression import QueryExpression
 
 
@@ -68,6 +69,14 @@ class ServiceClient:
         self.logger.debug("Returning access token")
         self.IsReady = True
         return self.access_token
+
+    def create(self, entity: Entity, logger: logging.Logger = None) -> Entity:
+        from datapyrse.core.services.create import CreateRequest as create_request
+
+        if not logger:
+            logger = self.logger
+
+        return create_request.create(self, entity, logger=logger)
 
     def retrieve(
         self,
