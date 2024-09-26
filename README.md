@@ -56,6 +56,13 @@ new_entity["ownerid"] = EntityReference("systemuser", user_id)
 
 service.create(new_entity)
 
+# Delete an entity
+service.delete(entity_name="new_tablename", entity_id=UUID("YOUR GUID"))
+service.delete(entity_name="new_tablename", entity_id="YOUR GUID AS STRING")
+service.delete(Entity("new_tablename", UUID("YOUR GUID")))
+service.delete(EntityReference("new_tablename", UUID("YOUR GUID")))
+
+
 ```
 
 

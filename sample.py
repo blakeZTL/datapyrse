@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID
 from datapyrse.core import *
 from datapyrse.core.query import *
 
@@ -25,13 +25,19 @@ for ent in entities.entities:
     print()
 
 # Retrieve a single entity
-entity: Entity = service.retrieve_single("new_tablename", uuid.UUID("YOUR_GUID"))
+entity: Entity = service.retrieve_single("new_tablename", UUID("YOUR_GUID"))
 
 # Create a new entity
 new_entity: Entity = Entity("new_tablename")
 new_entity["new_name"] = "New Entity"
 
-user_id: uuid.UUID = uuid.UUID("USER_GUID")
+user_id: UUID = UUID("USER_GUID")
 new_entity["ownerid"] = EntityReference("systemuser", user_id)
 
 service.create(new_entity)
+
+# Delete an entity
+service.delete(entity_name="new_tablename", entity_id=UUID("YOUR GUID"))
+service.delete(entity_name="new_tablename", entity_id="YOUR GUID AS STRING")
+service.delete(Entity("new_tablename", UUID("YOUR GUID")))
+service.delete(EntityReference("new_tablename", UUID("YOUR GUID")))
