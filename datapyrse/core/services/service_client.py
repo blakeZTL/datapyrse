@@ -42,8 +42,9 @@ class ServiceClient:
             self.logger.setLevel(logging.WARNING)
         if self.access_token and self.token_expiry and time.time() > self.token_expiry:
             self.IsReady = True
-
-        self.logger.debug("Service client initialized. Getting metadata...")
+        if not self.metadata:
+            self.logger.error("Failed to get metadata")
+            raise ValueError("Failed to get metadata")
 
     def _get_metadata(self) -> OrgMetadata:
         from datapyrse.core.utils.dataverse import get_metadata
@@ -114,3 +115,11 @@ class ServiceClient:
             logger = self.logger
 
         return retrieve_multiple_method(service_client=self, query=query, logger=logger)
+
+    def delete(self, logger: logging.Logger = None, **kwargs) -> bool:
+        from datapyrse.core.services.delete import delete_entity
+
+        if not logger:
+            logger = self.logger
+
+        return delete_entity(service_client=self, logger=logger, **kwargs)
