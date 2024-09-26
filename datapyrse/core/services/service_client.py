@@ -34,7 +34,7 @@ class ServiceClient:
         self.IsReady = False
         self.logger = logger
         self.token = self._acquire_token()
-        self.metadata = self._get_metadata()
+        self.metadata = metadata if metadata else self._get_metadata()
 
     def __post_init__(self):
         if not self.logger:
