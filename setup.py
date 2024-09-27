@@ -6,7 +6,7 @@ with open("requirements.txt") as f:
 
 setup(
     name="datapyrse",
-    version="0.5.1",
+    version="0.5.2",
     packages=["datapyrse", "datapyrse.core"],
     install_requires=requirements,
 )
