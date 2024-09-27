@@ -1,5 +1,6 @@
 import logging
-import uuid
+from logging import Logger
+from uuid import UUID
 from dataclasses import dataclass, field
 from typing import Dict, Any, List
 
@@ -22,14 +23,14 @@ class Entity:
         entity_id (uuid.UUID): The unique identifier for the entity instance.
         attributes (Dict[str, Any]): A dictionary of attribute values associated
             with the entity.
-        logger (logging.Logger): A logger instance for debugging and information
+        logger (Logger): A logger instance for debugging and information
             logging.
     """
 
     entity_logical_name: str
-    entity_id: uuid.UUID = None
+    entity_id: UUID | None = None
     attributes: Dict[str, Any] = field(default_factory=dict)
-    logger: logging.Logger = None
+    logger: Logger = logging.getLogger(__name__)
 
     def __post_init__(self) -> None:
         """
@@ -116,13 +117,13 @@ class Entity:
                 self.logger.debug(
                     f"Name: {self.attributes.get(f"{attribute}@OData.Community.Display.V1.FormattedValue")}")
                 attribute_ref: EntityReference = EntityReference(
-                    entity_logical_name=self.attributes.get(
+                    entity_logical_name=str(self.attributes.get(
                         f"{attribute}@Microsoft.Dynamics.CRM.lookuplogicalname"
-                    ),
-                    entity_id=uuid.UUID(self.attributes.get(attribute)),
-                    name=self.attributes.get(
+                    )),
+                    entity_id=UUID(self.attributes.get(attribute)),
+                    name=str(self.attributes.get(
                         f"{attribute}@OData.Community.Display.V1.FormattedValue"
-                    ),
+                    )),
                 )
                 parsed_attributes[attribute_name] = attribute_ref
             elif (
@@ -136,8 +137,8 @@ class Entity:
                 )
                 parsed_attributes[attribute] = OptionSet(label=label, value=value)
             elif f"{self.entity_logical_name}id" == attribute:
-                logging.debug(f"Setting entity ID to {self.attributes.get(attribute)}")
-                self.entity_id = uuid.UUID(self.attributes.get(attribute))
+                self.logger.debug(f"Setting entity ID to {self.attributes.get(attribute)}")
+                self.entity_id = UUID(self.attributes.get(attribute))
                 parsed_attributes[attribute] = self.attributes.get(attribute)
             else:
                 parsed_attributes[attribute] = self.attributes.get(attribute)

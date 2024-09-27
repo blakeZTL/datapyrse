@@ -18,10 +18,10 @@ class OptionSet:
             "label": self.label,
         }
 
-    def get_option_value(self) -> int:
+    def get_option_value(self) -> int | None:
         """Get the value of an option by name."""
         return self.value
 
-    def get_option_label(self) -> str:
+    def get_option_label(self) -> str | None:
         """Get the label of an option by value."""
         return self.label

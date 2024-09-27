@@ -22,7 +22,7 @@ def query_expression_to_fetchxml(query: QueryExpression) -> str:
     entity = ET.SubElement(fetch, "entity", name=query.entity_name)
 
     # Columns/attributes
-    if query.column_set.columns == True:
+    if query.column_set.columns == []:
         ET.SubElement(entity, "all-attributes")
     else:
         for column in query.column_set.columns:
@@ -33,17 +33,19 @@ def query_expression_to_fetchxml(query: QueryExpression) -> str:
         entity.append(filter_to_fetchxml(query.criteria))
 
     # Add orders (if any)
-    for order in query.orders:
-        ET.SubElement(
-            entity,
-            "order",
-            attribute=order.attribute_name,
-            descending=("true" if order.order_type == "DESC" else "false"),
-        )
+    if query.orders:
+        for order in query.orders:
+            ET.SubElement(
+                entity,
+                "order",
+                attribute=order.attribute_name,
+                descending=("true" if order.order_type == "DESC" else "false"),
+            )
 
     # Add linked entities (if any)
-    for link_entity in query.link_entities:
-        entity.append(link_entity_to_fetchxml(link_entity))
+    if query.link_entities:
+        for link_entity in query.link_entities:
+            entity.append(link_entity_to_fetchxml(link_entity))
 
     # Convert the XML tree to a string
     return ET.tostring(fetch, encoding="unicode")
@@ -64,14 +66,22 @@ def filter_to_fetchxml(filter_expression: FilterExpression) -> ET.Element:
             value="",
         )
         if (
-            condition.operator == ConditionOperator.IN
-            or condition.operator == ConditionOperator.NOT_IN
-        ) and condition.values:
+            (
+                condition.operator == ConditionOperator.IN
+                or condition.operator == ConditionOperator.NOT_IN
+            )
+            and condition.values
+            and isinstance(condition.values, list)
+        ):
             for value in condition.values:
                 value_element = ET.SubElement(condition_element, "value")
                 value_element.text = str(value)
         else:
-            condition_element.set("value", str(condition.values[0]))
+            (
+                condition_element.set("value", str(condition.values[0]))
+                if isinstance(condition.values, list)
+                else condition_element.set("value", str(condition.values))
+            )
 
     # Add nested filters (if any)
     for sub_filter in filter_expression.filters:
@@ -102,7 +112,8 @@ def link_entity_to_fetchxml(link_entity: LinkEntity) -> ET.Element:
         link_element.append(filter_to_fetchxml(link_entity.link_criteria))
 
     # Add nested link-entities (if any)
-    for nested_link in link_entity.link_entities:
-        link_element.append(link_entity_to_fetchxml(nested_link))
+    if link_entity.link_entities:
+        for nested_link in link_entity.link_entities:
+            link_element.append(link_entity_to_fetchxml(nested_link))
 
     return link_element

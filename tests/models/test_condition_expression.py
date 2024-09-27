@@ -1,5 +1,4 @@
 import pytest
-from datapyrse.core.models.column_set import ColumnSet
 from datapyrse.core.models.condition_expression import (
     ConditionExpression,
     ConditionOperator,
@@ -26,7 +25,7 @@ def test_condition_expression_with_no_values():
 
 def test_condition_expression_with_no_operator():
     try:
-        ConditionExpression(attribute_name="name", operator=None, values=["John"])
+        ConditionExpression(attribute_name="name", operator=None, values=["John"])  # type: ignore
     except Exception as e:
         assert str(e) == "Operator is required"
 
@@ -77,7 +76,7 @@ def test_condition_expression_with_in_operator_too_many_values(operator):
 def test_condition_expression_with_invalid_attribute_name():
     try:
         ConditionExpression(
-            attribute_name=1, operator=ConditionOperator.EQUAL, values="John"
+            attribute_name=1, operator=ConditionOperator.EQUAL, values="John"  # type: ignore
         )
     except Exception as e:
         assert str(e) == "Attribute name must be a string"
@@ -85,7 +84,7 @@ def test_condition_expression_with_invalid_attribute_name():
 
 def test_condition_expression_with_invalid_operator():
     try:
-        ConditionExpression(attribute_name="name", operator="invalid", values="John")
+        ConditionExpression(attribute_name="name", operator="invalid", values="John")  # type: ignore
     except Exception as e:
         assert str(e) == "Operator must be a ConditionOperator"
 
@@ -95,7 +94,7 @@ def test_condition_expression_with_invalid_values():
         ConditionExpression(
             attribute_name="name",
             operator=ConditionOperator.EQUAL,
-            values=ColumnSet(),
+            values=[],
         )
     except Exception as e:
-        assert str(e) == "Columns must be a list of strings or a value of True"
+        assert str(e) == "Values must be a list for IN/NOT IN operators"

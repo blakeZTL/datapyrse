@@ -4,10 +4,11 @@ from typing import List, Optional
 
 @dataclass
 class AttributeMetadata:
-    logical_name: str = None
-    attribute_type: str = None
-    schema_name: str = None
+    logical_name: str | None = None
+    attribute_type: str | None = None
+    schema_name: str | None = None
 
+    @staticmethod
     def from_json(json: dict) -> "AttributeMetadata":
         return AttributeMetadata(
             logical_name=json["LogicalName"],
@@ -18,11 +19,11 @@ class AttributeMetadata:
 
 @dataclass
 class LocalizedLabel:
-    has_changed: Optional[bool] = None
-    is_managed: bool = None
-    label: str = None
-    language_code: int = None
-    metadata_id: str = None
+    has_changed: Optional[bool] | None = None
+    is_managed: bool | None = None
+    label: str | None = None
+    language_code: int | None = None
+    metadata_id: str | None = None
 
     @staticmethod
     def from_json(json: dict) -> "LocalizedLabel":
@@ -37,12 +38,12 @@ class LocalizedLabel:
 
 @dataclass
 class EntityMetadata:
-    attributes: List[AttributeMetadata] = None
-    logical_collection_name: str = None
-    logical_name: str = None
-    schema_name: str = None
-    primary_id_attribute: str = None
-    primary_name_attribute: str = None
+    attributes: List[AttributeMetadata] | None = None
+    logical_name: str | None = None
+    logical_collection_name: str | None = None
+    schema_name: str | None = None
+    primary_id_attribute: str | None = None
+    primary_name_attribute: str | None = None
 
     @staticmethod
     def from_json(json: dict) -> "EntityMetadata":
@@ -60,7 +61,7 @@ class EntityMetadata:
 
 @dataclass
 class OrgMetadata:
-    entities: List[EntityMetadata] = None
+    entities: List[EntityMetadata] | None = None
 
     @staticmethod
     def from_json(json: dict) -> "OrgMetadata":

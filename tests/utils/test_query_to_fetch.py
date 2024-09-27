@@ -39,9 +39,12 @@ class TestQueryExpressionToFetchXML:
 
         root = ET.fromstring(fetchxml)
         entity = root.find("entity")
+        if entity is not None:
+            assert entity.attrib["name"] == "account"
+        else:
+            assert False
         assert root.tag == "fetch"
         assert root.attrib["top"] == "50"
-        assert entity.attrib["name"] == "account"
 
         # Check if attributes are correct
         attributes = entity.findall("attribute")
@@ -57,7 +60,7 @@ class TestQueryExpressionToFetchXML:
 
         root = ET.fromstring(fetchxml)
         entity = root.find("entity")
-        all_attributes = entity.find("all-attributes")
+        all_attributes = entity.find("all-attributes") if entity is not None else None
 
         assert all_attributes is not None
 
@@ -114,11 +117,17 @@ class TestFilterToFetchXML:
         filter_xml = filter_to_fetchxml(filter_expression)
         nested_filter_xml = filter_xml.find("filter")
 
-        assert nested_filter_xml.attrib["type"] == "or"
+        if nested_filter_xml is not None:
+            assert nested_filter_xml.attrib["type"] == "or"
+        else:
+            assert False
         condition = nested_filter_xml.find("condition")
-        assert condition.attrib["attribute"] == "firstname"
-        assert condition.attrib["operator"] == "eq"
-        assert condition.attrib["value"] == "John"
+        if condition is not None:
+            assert condition.attrib["attribute"] == "firstname"
+            assert condition.attrib["operator"] == "eq"
+            assert condition.attrib["value"] == "John"
+        else:
+            assert False
 
 
 class TestLinkEntityToFetchXML:
@@ -169,6 +178,7 @@ class TestLinkEntityToFetchXML:
         filter_xml = link_xml.find("filter")
         assert filter_xml is not None
         condition = filter_xml.find("condition")
+        assert condition is not None
         assert condition.attrib["attribute"] == "statuscode"
         assert condition.attrib["operator"] == "eq"
         assert condition.attrib["value"] == "1"

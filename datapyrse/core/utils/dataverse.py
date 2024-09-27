@@ -1,4 +1,5 @@
 import logging
+from logging import Logger
 from typing import List
 from datapyrse.core.models.entity import Entity
 from datapyrse.core.models.entity_metadata import EntityMetadata, OrgMetadata
@@ -105,7 +106,9 @@ def transform_column_set(
 
 
 def get_entity_metadata(
-    entity_logical_name: str, org_metadata: OrgMetadata, logger: logging.Logger = None
+    entity_logical_name: str,
+    org_metadata: OrgMetadata,
+    logger: Logger = logging.getLogger(__name__),
 ) -> EntityMetadata:
     """
     Retrieves the metadata for a specific entity from Organization Metadata.
@@ -121,13 +124,10 @@ def get_entity_metadata(
     Raises:
         Exception: If the entity metadata is not found.
     """
-    if not logger:
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.WARNING)
-
     if not org_metadata:
         raise Exception("Organization metadata is required")
-
+    if not org_metadata.entities:
+        raise Exception("Organization metadata entities not found")
     entity_metadata = next(
         (
             data
@@ -143,7 +143,7 @@ def get_entity_metadata(
 
 
 def get_metadata(
-    service_client: ServiceClient, logger: logging.Logger = None
+    service_client: ServiceClient, logger: Logger = logging.getLogger(__name__)
 ) -> OrgMetadata:
     """
     Retrieves the metadata for all entities from the Dataverse service.
@@ -158,9 +158,6 @@ def get_metadata(
     Raises:
         Exception: If no metadata is found
     """
-    if not logger:
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.WARNING)
     endpoint = f"api/data/v9.2/EntityDefinitions?$expand=Attributes($select=LogicalName,AttributeType,SchemaName)"
     headers = {
         "Authorization": f"Bearer {service_client.get_access_token()}",
@@ -179,15 +176,18 @@ def get_metadata(
         raise Exception("No metadata found")
 
     orgMetadata = OrgMetadata.from_json(response_json)
-    logger.debug(f"Metadata fetched: {str(orgMetadata.entities.count)}")
+    if not orgMetadata.entities:
+        logger.warning("No entity metadata found")
+    else:
+        logger.debug(f"Metadata fetched: {str(orgMetadata.entities.count)}")
     return orgMetadata
 
 
 def parse_entity_to_web_api_body(
     entity: Entity,
     service_client: ServiceClient,
-    logger: logging.Logger,
-    entity_logical_collection_name: str = None,
+    logger: Logger = logging.getLogger(__name__),
+    entity_logical_collection_name: str | None = None,
 ) -> dict:
     """
     Parses an entity object to a dictionary that can be used as the body of a Web API request.
@@ -204,12 +204,7 @@ def parse_entity_to_web_api_body(
         Exception: If the service client is not ready, the entity is not of type Entity, or the entity metadata
             is not found.
 
-
-
     """
-    if not logger:
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.WARNING)
 
     logger.debug(parse_entity_to_web_api_body.__name__)
     if not service_client.IsReady:
@@ -250,18 +245,19 @@ def parse_entity_to_web_api_body(
             )
             if attribute_metadata and attribute_metadata.attribute_type == "Lookup":
                 logger.debug(f"{attr} is Lookup")
-                binding_to: str = None
+                binding_to: str | None = None
                 if entity_logical_collection_name:
                     binding_to = entity_logical_collection_name
                 else:
-                    binding_to: str = next(
-                        (
-                            data.logical_collection_name
-                            for data in service_client.metadata.entities
-                            if data.logical_name == value.entity_logical_name
-                        ),
-                        None,
-                    )
+                    if service_client.metadata.entities:
+                        binding_to = next(
+                            (
+                                data.logical_collection_name
+                                for data in service_client.metadata.entities
+                                if data.logical_name == value.entity_logical_name
+                            ),
+                            None,
+                        )
 
                 if not binding_to:
                     raise Exception(

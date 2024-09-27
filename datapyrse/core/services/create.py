@@ -1,4 +1,5 @@
 import logging
+from logging import Logger
 from uuid import UUID
 
 import requests
@@ -22,9 +23,9 @@ class CreateRequest:
 
     @staticmethod
     def create(
-            service_client: ServiceClient,
-            entity: Entity,
-            logger: logging.Logger = None,
+        service_client: ServiceClient,
+        entity: Entity,
+        logger: Logger = logging.getLogger(__name__),
     ) -> Entity:
         """
         Creates an entity in Dataverse.
@@ -66,6 +67,10 @@ class CreateRequest:
             raise Exception("Entity logical name is required")
 
         logger.debug("Creating entity")
+        if not service_client.metadata.entities:
+            logger.error("Metadata entities not found")
+            raise Exception("Metadata entities not found")
+
         entity_plural_name: str | None = next(
             (
                 data.logical_collection_name

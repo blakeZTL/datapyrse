@@ -1,10 +1,12 @@
 import logging
+from logging import Logger
 import uuid
 from typing import List
 
 import requests
 from requests import Response
 
+from datapyrse.core.models.column_set import ColumnSet
 from datapyrse.core.models.entity import Entity
 from datapyrse.core.services.service_client import ServiceClient
 from datapyrse.core.utils.dataverse import (
@@ -13,11 +15,11 @@ from datapyrse.core.utils.dataverse import (
 
 
 def retrieve(
-        service_client: ServiceClient,
-        entity_logical_name: str,
-        entity_id: uuid.UUID,
-        column_set: List[str],
-        logger: logging.Logger = None,
+    service_client: ServiceClient,
+    entity_logical_name: str,
+    entity_id: uuid.UUID,
+    column_set: ColumnSet,
+    logger: Logger | None = None,
 ) -> Entity:
     """
     Retrieves an entity from Dataverse by its logical name and ID.
@@ -31,7 +33,7 @@ def retrieve(
             and send the request.
         entity_logical_name (str): The logical name of the entity in Dataverse.
         entity_id (uuid.UUID): The unique identifier of the entity to retrieve.
-        column_set (List[str]): A list of attribute names (columns) to be retrieved
+        column_set (ColumnSet): A list of attribute names (columns) to be retrieved
             from the entity.
         logger (logging.Logger, optional): A logger instance for logging debug
             and error messages. Defaults to None.
@@ -60,6 +62,8 @@ def retrieve(
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.WARNING)
 
+    if not service_client.metadata.entities:
+        raise Exception("Metadata entities not found")
     entity_plural_name: str | None = next(
         (
             data.logical_collection_name

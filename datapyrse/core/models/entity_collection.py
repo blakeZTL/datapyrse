@@ -24,7 +24,12 @@ class EntityCollection:
         """Add an entity to the collection."""
         if not isinstance(entity, Entity):
             raise ValueError("Entity must be an instance of Entity class")
-        self.entities.append(entity)
+        if entity.entity_id is None or entity.entity_logical_name is None:
+            raise ValueError("Entity must have an ID and a logical name")
+        if not self.entities:
+            self.entities = []
+        if entity not in self.entities:
+            self.entities.append(entity)
 
     def remove_entity(self, entity: Entity) -> None:
         """Remove an entity from the collection."""
@@ -32,17 +37,20 @@ class EntityCollection:
             raise ValueError("Entity must be an instance of Entity class")
         if entity.entity_id is None or entity.entity_logical_name is None:
             raise ValueError("Entity must have an ID and a logical name")
-        self.entities = [
-            e
-            for e in self.entities
-            if not (
-                e.entity_id == entity.entity_id
-                and e.entity_logical_name == entity.entity_logical_name
-            )
-        ]
+        if self.entities:
+            self.entities = [
+                e
+                for e in self.entities
+                if not (
+                    e.entity_id == entity.entity_id
+                    and e.entity_logical_name == entity.entity_logical_name
+                )
+            ]
 
     def to_dict(self) -> dict:
         """Convert EntityCollection instance to a dictionary."""
+        if not self.entities:
+            self.entities = []
         return {
             "logical_name": self.entity_logical_name,
             "entities": [entity.to_dict() for entity in self.entities],

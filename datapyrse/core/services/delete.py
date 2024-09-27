@@ -1,4 +1,5 @@
 from logging import Logger
+import logging
 from uuid import UUID
 
 import requests
@@ -11,7 +12,9 @@ from datapyrse.core.services.service_client import ServiceClient
 
 
 def delete_entity(
-        service_client: ServiceClient, logger: Logger = None, **kwargs
+    service_client: ServiceClient,
+    logger: Logger = logging.getLogger(__name__),
+    **kwargs,
 ) -> bool:
     entity_id: str | None = None
     entity_name: str | None = None
@@ -74,6 +77,10 @@ def delete_entity(
         raise ValueError("entity_id never set")
 
     # delete entity
+    if not service_client.metadata.entities:
+        logger.error("Metadata entities not found")
+        raise ValueError("Metadata entities not found")
+
     entity_metadata: EntityMetadata | None = next(
         (
             entity_meta

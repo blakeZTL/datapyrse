@@ -1,4 +1,5 @@
 import logging
+from logging import Logger
 
 import requests
 
@@ -9,9 +10,9 @@ from datapyrse.core.services.service_client import ServiceClient
 
 
 def retrieve_multiple(
-        service_client: ServiceClient,
-        query: QueryExpression,
-        logger: logging.Logger = None,
+    service_client: ServiceClient,
+    query: QueryExpression,
+    logger: Logger = logging.getLogger(__name__),
 ):
     """
     Retrieves multiple entities from Dataverse using a query expression.
@@ -51,6 +52,9 @@ def retrieve_multiple(
     entity_logical_name: str = query.entity_name
     if not entity_logical_name:
         raise ValueError("Entity logical name not found in query")
+
+    if not service_client.metadata.entities:
+        raise Exception("Metadata entities not found")
 
     entity_plural_name: str | None = next(
         (
@@ -96,7 +100,9 @@ def retrieve_multiple(
     if not response.json().get("value"):
         return EntityCollection(entity_logical_name=entity_logical_name, entities=[])
 
-    entities: EntityCollection = EntityCollection(entity_logical_name=entity_logical_name)
+    entities: EntityCollection = EntityCollection(
+        entity_logical_name=entity_logical_name
+    )
     logger.debug(f"Entity logical name: {entity_logical_name}")
     logger.debug(f"Retrieved {len(response.json().get('value'))} entities")
     logger.debug(f"Entities: {response.json().get('value')}")

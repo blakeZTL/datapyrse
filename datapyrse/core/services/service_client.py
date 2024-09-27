@@ -1,10 +1,12 @@
 import logging
+from logging import Logger
 import time
 import uuid
 from typing import List
 
 import msal
 
+from datapyrse.core.models.column_set import ColumnSet
 from datapyrse.core.models.entity import Entity
 from datapyrse.core.models.entity_metadata import OrgMetadata
 from datapyrse.core.models.query_expression import QueryExpression
@@ -13,16 +15,15 @@ from datapyrse.core.models.query_expression import QueryExpression
 class ServiceClient:
 
     def __init__(
-            self,
-            tenant_id: str,
-            resource_url: str,
-            client_id: str = None,
-            scope=None,
-            prompt=None,
-            metadata: OrgMetadata = None,
-            logger: logging.Logger = None,
+        self,
+        tenant_id: str,
+        resource_url: str,
+        client_id: str = "51f81489-12ee-4a9e-aaae-a2591f45987d",
+        scope=None,
+        prompt=None,
+        logger: Logger = logging.getLogger(__name__),
     ) -> None:
-        self.client_id = client_id or "51f81489-12ee-4a9e-aaae-a2591f45987d"
+        self.client_id = client_id
         self.tenant_id = tenant_id
         self.resource_url = resource_url
         self.authority_url = f"https://login.microsoftonline.com/{tenant_id}"
@@ -31,19 +32,17 @@ class ServiceClient:
         self.msal_app = msal.PublicClientApplication(
             client_id=self.client_id, authority=self.authority_url
         )
-        self.access_token = None
-        self.token_expiry = None
+        self.access_token: str | None = None
+        self.token_expiry: float | None = None
         self.IsReady = False
         self.logger = logger
-        self.metadata = metadata
 
     def __post_init__(self):
         if not self.logger:
             self.logger = logging.getLogger(__name__)
             self.logger.setLevel(logging.WARNING)
         self._acquire_token()
-        if not self.metadata:
-            self._get_metadata()
+        self.metadata = self._get_metadata()
         if self.access_token and self.token_expiry and time.time() > self.token_expiry:
             self.IsReady = True
         if not self.metadata:
@@ -65,8 +64,11 @@ class ServiceClient:
         )
         if "access_token" in result:
             self.token = result
-            self.access_token = self.token["access_token"]
-            self.token_expiry = time.time() + self.token["expires_in"]
+            self.access_token = str(self.token["access_token"])
+            if "expires_in" in self.token and isinstance(
+                self.token["expires_in"], float
+            ):
+                self.token_expiry = time.time() + float(self.token["expires_in"])
             self.IsReady = True
         else:
             raise Exception(
@@ -77,15 +79,17 @@ class ServiceClient:
         self.IsReady = False
         self.logger.debug("Getting access token")
         if not self.access_token or (
-                self.token_expiry and time.time() > self.token_expiry
+            self.token_expiry and time.time() > self.token_expiry
         ):
             self.logger.debug("Acquiring new token")
             self._acquire_token()
         self.logger.debug("Returning access token")
         self.IsReady = True
+        if not self.access_token:
+            raise ValueError("Failed to get access token")
         return self.access_token
 
-    def create(self, entity: Entity, logger: logging.Logger = None) -> Entity:
+    def create(self, entity: Entity, logger: Logger | None = None) -> Entity:
         from datapyrse.core.services.create import CreateRequest as create_request
 
         if not logger:
@@ -94,11 +98,11 @@ class ServiceClient:
         return create_request.create(self, entity, logger=logger)
 
     def retrieve(
-            self,
-            entity_logical_name: str,
-            entity_id: uuid.UUID,
-            column_set: List[str],
-            logger: logging.Logger = None,
+        self,
+        entity_logical_name: str,
+        entity_id: uuid.UUID,
+        column_set: ColumnSet,
+        logger: Logger | None = None,
     ):
         from datapyrse.core.services.retrieve import retrieve as retrieve_method
 
@@ -106,10 +110,14 @@ class ServiceClient:
             logger = self.logger
 
         return retrieve_method(
-            self, entity_logical_name, entity_id, column_set, logger=logger
+            service_client=self,
+            entity_logical_name=entity_logical_name,
+            entity_id=entity_id,
+            column_set=column_set,
+            logger=logger,
         )
 
-    def retrieve_multiple(self, query: QueryExpression, logger: logging.Logger = None):
+    def retrieve_multiple(self, query: QueryExpression, logger: Logger | None = None):
         from datapyrse.core.services.retrieve_multiple import (
             retrieve_multiple as retrieve_multiple_method,
         )
@@ -119,7 +127,7 @@ class ServiceClient:
 
         return retrieve_multiple_method(service_client=self, query=query, logger=logger)
 
-    def delete(self, logger: logging.Logger = None, **kwargs) -> bool:
+    def delete(self, logger: Logger | None = None, **kwargs) -> bool:
         from datapyrse.core.services.delete import delete_entity
 
         if not logger:

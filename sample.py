@@ -18,14 +18,17 @@ query: QueryExpression = QueryExpression(
 )
 entities: EntityCollection = service.retrieve_multiple(query)
 
-for ent in entities.entities:
-    print(f"\nId: {ent.entity_id}")
-    for attribute in ent.attributes:
-        print(f"  {attribute}: {ent.attributes[attribute]}")
-    print()
+if entities.entities:
+    for ent in entities.entities:
+        print(f"\nId: {ent.entity_id}")
+        for attribute in ent.attributes:
+            print(f"  {attribute}: {ent.attributes[attribute]}")
+        print()
 
 # Retrieve a single entity
-entity: Entity = service.retrieve_single("new_tablename", UUID("YOUR_GUID"))
+entity: Entity = service.retrieve(
+    "new_tablename", UUID("YOUR_GUID"), ColumnSet(["new_name", "ownerid"])
+)
 
 # Create a new entity
 new_entity: Entity = Entity("new_tablename")
@@ -39,5 +42,5 @@ service.create(new_entity)
 # Delete an entity
 service.delete(entity_name="new_tablename", entity_id=UUID("YOUR GUID"))
 service.delete(entity_name="new_tablename", entity_id="YOUR GUID AS STRING")
-service.delete(Entity("new_tablename", UUID("YOUR GUID")))
-service.delete(EntityReference("new_tablename", UUID("YOUR GUID")))
+service.delete(entity=Entity("new_tablename", UUID("YOUR GUID")))
+service.delete(entity_reference=EntityReference("new_tablename", UUID("YOUR GUID")))

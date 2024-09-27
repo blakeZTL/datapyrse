@@ -5,16 +5,14 @@ from typing import List, Union
 
 @dataclass
 class ColumnSet:
-    columns: Union[List[str], bool, None] = field(default=None)
+    columns: List[str] = field(default_factory=list)
 
-    def __init__(self, columns: Union[List[str], bool, None] = None) -> None:
+    def __init__(self, columns: Union[List[str], bool]) -> None:
         if isinstance(columns, bool):
             if columns == False:
                 raise ValueError("Columns must be a list of strings or a value of True")
-            self.columns = columns
+            self.columns = []
         elif isinstance(columns, list):
             self.columns = columns
-        elif not isinstance(columns, list) or not isinstance(columns, bool):
-            raise ValueError("Columns must be a list of strings or a value of True")
         else:
-            self.columns = columns
+            raise ValueError("Columns must be a list of strings or a value of True")
