@@ -1,16 +1,20 @@
-import requests
-from datapyrse.core.models.entity import Entity
-from datapyrse.core.models.entity_reference import EntityReference
-from uuid import UUID
 from logging import Logger
+from uuid import UUID
+
+import requests
+from requests import Response
+
+from datapyrse.core.models.entity import Entity
+from datapyrse.core.models.entity_metadata import EntityMetadata
+from datapyrse.core.models.entity_reference import EntityReference
 from datapyrse.core.services.service_client import ServiceClient
 
 
 def delete_entity(
-    service_client: ServiceClient, logger: Logger = None, **kwargs
+        service_client: ServiceClient, logger: Logger = None, **kwargs
 ) -> bool:
-    entity_id: str = None
-    entity_name: str = None
+    entity_id: str | None = None
+    entity_name: str | None = None
 
     if not logger:
         import logging
@@ -25,7 +29,7 @@ def delete_entity(
         raise ValueError("At least one argument is required")
     logger.debug(f"Deleting entity with args: {kwargs}")
     if "entity" in kwargs:
-        entity = kwargs["entity"]
+        entity: Entity = kwargs["entity"]
         if isinstance(entity, Entity):
             if entity.entity_id is None:
                 logger.error("entity_id is required")
@@ -41,7 +45,7 @@ def delete_entity(
     if "entity_reference" in kwargs:
         entity_reference = kwargs["entity_reference"]
         if isinstance(entity_reference, EntityReference):
-            entity_id = entity_reference.entity_id
+            entity_id = str(entity_reference.entity_id)
             entity_name = entity_reference.entity_logical_name
         else:
             logger.error("entity_reference must be of type EntityReference")
@@ -64,12 +68,17 @@ def delete_entity(
         logger.error("entity_name is required")
         raise ValueError("entity_name is required")
 
+    if not entity_name:
+        raise ValueError("entity_name never set")
+    if not entity_id:
+        raise ValueError("entity_id never set")
+
     # delete entity
-    entity_metadata = next(
+    entity_metadata: EntityMetadata | None = next(
         (
-            entity
-            for entity in service_client.metadata.entities
-            if entity.logical_name == entity_name
+            entity_meta
+            for entity_meta in service_client.metadata.entities
+            if entity_meta.logical_name == entity_name
         ),
         None,
     )
@@ -84,7 +93,7 @@ def delete_entity(
     url: str = (
         f"{service_client.resource_url}/api/data/v9.2/{entity_plural_name}({entity_id})"
     )
-    headers = {
+    headers: dict = {
         "OData-MaxVersion": "4.0",
         "OData-Version": "4.0",
         "Accept": "application/json",
@@ -92,7 +101,7 @@ def delete_entity(
         "Prefer": "return=representation;odata.metadata=none",
         "Authorization": f"Bearer {service_client.get_access_token()}",
     }
-    response = requests.delete(url, headers=headers)
+    response: Response = requests.delete(url, headers=headers)
     response.raise_for_status()
     if response.ok:
         logger.info(f"Entity {entity_name} with id {entity_id} deleted")

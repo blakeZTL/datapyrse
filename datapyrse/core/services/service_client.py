@@ -1,24 +1,26 @@
 import logging
 import time
-from typing import List
 import uuid
+from typing import List
+
 import msal
+
 from datapyrse.core.models.entity import Entity
-from datapyrse.core.models.query_expression import QueryExpression
 from datapyrse.core.models.entity_metadata import OrgMetadata
+from datapyrse.core.models.query_expression import QueryExpression
 
 
 class ServiceClient:
 
     def __init__(
-        self,
-        tenant_id: str,
-        resource_url: str,
-        client_id: str = None,
-        scope=None,
-        prompt=None,
-        metadata: OrgMetadata = None,
-        logger: logging.Logger = None,
+            self,
+            tenant_id: str,
+            resource_url: str,
+            client_id: str = None,
+            scope=None,
+            prompt=None,
+            metadata: OrgMetadata = None,
+            logger: logging.Logger = None,
     ) -> None:
         self.client_id = client_id or "51f81489-12ee-4a9e-aaae-a2591f45987d"
         self.tenant_id = tenant_id
@@ -33,13 +35,15 @@ class ServiceClient:
         self.token_expiry = None
         self.IsReady = False
         self.logger = logger
-        self.token = self._acquire_token()
-        self.metadata = metadata if metadata else self._get_metadata()
+        self.metadata = metadata
 
     def __post_init__(self):
         if not self.logger:
             self.logger = logging.getLogger(__name__)
             self.logger.setLevel(logging.WARNING)
+        self._acquire_token()
+        if not self.metadata:
+            self._get_metadata()
         if self.access_token and self.token_expiry and time.time() > self.token_expiry:
             self.IsReady = True
         if not self.metadata:
@@ -55,7 +59,6 @@ class ServiceClient:
     def _acquire_token(self) -> None:
         self.IsReady = False
         self.logger.debug("Acquiring token")
-        result = None
         self.logger.debug("Acquiring interactive token")
         result = self.msal_app.acquire_token_interactive(
             scopes=self.scope, prompt=self.prompt
@@ -74,7 +77,7 @@ class ServiceClient:
         self.IsReady = False
         self.logger.debug("Getting access token")
         if not self.access_token or (
-            self.token_expiry and time.time() > self.token_expiry
+                self.token_expiry and time.time() > self.token_expiry
         ):
             self.logger.debug("Acquiring new token")
             self._acquire_token()
@@ -91,11 +94,11 @@ class ServiceClient:
         return create_request.create(self, entity, logger=logger)
 
     def retrieve(
-        self,
-        entity_logical_name: str,
-        entity_id: uuid.UUID,
-        column_set: List[str],
-        logger: logging.Logger = None,
+            self,
+            entity_logical_name: str,
+            entity_id: uuid.UUID,
+            column_set: List[str],
+            logger: logging.Logger = None,
     ):
         from datapyrse.core.services.retrieve import retrieve as retrieve_method
 
