@@ -8,25 +8,55 @@ from requests import Response
 from datapyrse.core.models.entity import Entity
 from datapyrse.core.models.entity_metadata import EntityMetadata
 from datapyrse.core.models.entity_reference import EntityReference
-from datapyrse.core.services.service_client import ServiceClient
 
 
 def delete_entity(
-    service_client: ServiceClient,
+    service_client,
     logger: Logger = logging.getLogger(__name__),
     **kwargs,
 ) -> bool:
+    """
+    Deletes an entity from Dataverse using the Web API.
+
+    This function allows deleting an entity in Dataverse based on provided entity
+    information. It accepts an `Entity`, `EntityReference`, or the combination of
+    `entity_name` and `entity_id`. The request is authenticated through the
+    `ServiceClient`, and it optionally allows bypassing custom plugin executions.
+
+    Args:
+        service_client (ServiceClient): The service client used to authenticate
+            and send the request.
+        logger (Logger, optional): A logger instance for logging debug, info,
+            and error messages. Defaults to a logger named after the current module.
+        **kwargs: Assortment of keyword arguments used to specify the entity to delete
+            and optional arguments to augment to request:
+            - entity (Entity): The entity instance to delete.
+            - entity_reference (EntityReference): Reference to the entity to delete.
+            - entity_name (str): Logical name of the entity.
+            - entity_id (UUID or str): ID of the entity to delete.
+            - BypassCustomPluginExecution (bool): Bypass plug-in logic if caller has prvBypassCustomPlugins privilege.
+            - SuppressCallbackRegistrationExpanderJob (bool): Surpress the triggering of a Power Automate.
+            - tag (str): Add a shared variable to the plugin execution context.
+
+    Returns:
+        bool: True if the entity was successfully deleted, False otherwise.
+
+    Raises:
+        ValueError: If required parameters like `service_client`, `entity_id`, or
+                    `entity_name` are missing or invalid, or if the service client
+                    is not ready.
+    """
     entity_id: str | None = None
     entity_name: str | None = None
 
-    if not logger:
-        import logging
+    from datapyrse.core.services.service_client import ServiceClient
 
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.WARN)
-    if not service_client or not service_client.IsReady:
-        logger.error("ServiceClient is not ready")
-        raise ValueError("ServiceClient is not ready")
+    if not service_client or not isinstance(service_client, ServiceClient):
+        logger.error("ServiceClient is required and must be of type ServiceClient")
+        raise ValueError("ServiceClient is required and must be of type ServiceClient")
+
+    if not logger:
+        logger = service_client._prepare_request()
     if not kwargs:
         logger.error("At least one argument is required")
         raise ValueError("At least one argument is required")
@@ -100,14 +130,11 @@ def delete_entity(
     url: str = (
         f"{service_client.resource_url}/api/data/v9.2/{entity_plural_name}({entity_id})"
     )
-    headers: dict = {
-        "OData-MaxVersion": "4.0",
-        "OData-Version": "4.0",
-        "Accept": "application/json",
-        "Content-Type": "application/json; charset=utf-8",
-        "Prefer": "return=representation;odata.metadata=none",
-        "Authorization": f"Bearer {service_client.get_access_token()}",
-    }
+    headers: dict = service_client._get_request_headers(**kwargs)
+    if kwargs.get("tag") is not None:
+        tag: str = str(kwargs["tag"])
+        url += f"?tag={tag}"
+
     response: Response = requests.delete(url, headers=headers)
     response.raise_for_status()
     if response.ok:

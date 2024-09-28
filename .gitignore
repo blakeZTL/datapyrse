@@ -2,6 +2,6 @@
 __pycache__
 venv
 .pytest_cache
-example.ipynb
+*.ipynb
 *.egg-info
 dist

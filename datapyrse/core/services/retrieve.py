@@ -8,18 +8,17 @@ from requests import Response
 
 from datapyrse.core.models.column_set import ColumnSet
 from datapyrse.core.models.entity import Entity
-from datapyrse.core.services.service_client import ServiceClient
 from datapyrse.core.utils.dataverse import (
     transform_column_set,
 )
 
 
 def retrieve(
-    service_client: ServiceClient,
+    service_client,
     entity_logical_name: str,
     entity_id: uuid.UUID,
     column_set: ColumnSet,
-    logger: Logger | None = None,
+    logger: Logger = logging.getLogger(__name__),
 ) -> Entity:
     """
     Retrieves an entity from Dataverse by its logical name and ID.
@@ -46,8 +45,13 @@ def retrieve(
             name or ID is missing, if the column set transformation fails, or if
             the entity cannot be found.
     """
-    if not service_client.IsReady:
-        raise Exception("Service client is not ready")
+
+    from datapyrse.core.services.service_client import ServiceClient
+
+    if not service_client or not isinstance(service_client, ServiceClient):
+        raise Exception("Service client is required and must be of type ServiceClient")
+
+    logger = service_client._prepare_request(logger)
 
     if not entity_logical_name:
         raise Exception("Entity plural name is required")
@@ -57,10 +61,6 @@ def retrieve(
 
     if not column_set:
         raise Exception("Column set is required")
-
-    if not logger:
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.WARNING)
 
     if not service_client.metadata.entities:
         raise Exception("Metadata entities not found")
@@ -86,14 +86,7 @@ def retrieve(
 
     logger.debug("Retrieving entity")
     endpoint: str = f"api/data/v9.2/{entity_plural_name}({str(entity_id)})"
-    headers: dict = {
-        "Authorization": f"Bearer {service_client.get_access_token()}",
-        "OData-MaxVersion": "4.0",
-        "OData-Version": "4.0",
-        "Accept": "application/json",
-        "Content-Type": "application/json; charset=utf-8",
-        "Prefer": "odata.include-annotations=*",
-    }
+    headers: dict = service_client._get_request_headers()
     url: str = f"{service_client.resource_url}/{endpoint}"
     if select:
         url = f"{url}?$select={select}"

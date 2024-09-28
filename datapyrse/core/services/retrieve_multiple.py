@@ -6,11 +6,10 @@ import requests
 from datapyrse.core.models.entity import Entity
 from datapyrse.core.models.entity_collection import EntityCollection
 from datapyrse.core.models.query_expression import QueryExpression
-from datapyrse.core.services.service_client import ServiceClient
 
 
 def retrieve_multiple(
-    service_client: ServiceClient,
+    service_client,
     query: QueryExpression,
     logger: Logger = logging.getLogger(__name__),
 ):
@@ -36,18 +35,19 @@ def retrieve_multiple(
         Exception: Raised if the service client is not ready, the query is invalid,
             or the API request fails.
     """
-    if not service_client.IsReady:
-        raise Exception("Service client is not ready")
+
+    from datapyrse.core.services.service_client import ServiceClient
+
+    if not service_client or not isinstance(service_client, ServiceClient):
+        raise Exception("Service client is required and must be of type ServiceClient")
+
+    logger = service_client._prepare_request(logger)
 
     if not query:
         raise Exception("Query is required")
     else:
         if not isinstance(query, QueryExpression):
             raise Exception("Query must be a QueryExpression")
-
-    if not logger:
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.WARNING)
 
     entity_logical_name: str = query.entity_name
     if not entity_logical_name:
@@ -69,14 +69,7 @@ def retrieve_multiple(
 
     logger.debug("Retrieving entities")
     endpoint: str = f"api/data/v9.2/{entity_plural_name}"
-    headers: dict = {
-        "Authorization": f"Bearer {service_client.get_access_token()}",
-        "OData-MaxVersion": "4.0",
-        "OData-Version": "4.0",
-        "Accept": "application/json",
-        "Content-Type": "application/json; charset=utf-8",
-        "Prefer": "odata.include-annotations=*",
-    }
+    headers: dict = service_client._get_request_headers()
 
     fetch_xml: str = query.to_fetchxml()
     if fetch_xml:
