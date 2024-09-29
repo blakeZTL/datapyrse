@@ -1,5 +1,5 @@
-from datapyrse.core.models.entity_collection import EntityCollection
-from datapyrse.core.models.entity import Entity
+from datapyrse.models.entity_collection import EntityCollection
+from datapyrse.models.entity import Entity
 
 
 def test_entity_collection_empty_initialization():

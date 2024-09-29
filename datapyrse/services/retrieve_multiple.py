@@ -7,11 +7,11 @@ from logging import Logger, getLogger
 
 from requests import Request, Response
 
-from datapyrse.core.models.entity import Entity
-from datapyrse.core.models.entity_collection import EntityCollection
-from datapyrse.core.models.methods import Method
-from datapyrse.core.models.query_expression import QueryExpression
-from datapyrse.core.services.dataverse_request import DataverseRequest
+from datapyrse.models.entity import Entity
+from datapyrse.models.entity_collection import EntityCollection
+from datapyrse.models.methods import Method
+from datapyrse.models.query_expression import QueryExpression
+from datapyrse.services.dataverse_request import DataverseRequest
 
 
 def get_retrieve_multiple_request(

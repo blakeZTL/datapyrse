@@ -7,11 +7,11 @@ from logging import Logger
 from typing import Any, List
 
 
-from datapyrse.core.models.entity_metadata import EntityMetadata, OrgMetadata
-from datapyrse.core.models.column_set import ColumnSet
-from datapyrse.core.models.entity import Entity
-from datapyrse.core.models.entity_reference import EntityReference
-from datapyrse.core.models.option_set import OptionSet
+from datapyrse.models.entity_metadata import EntityMetadata, OrgMetadata
+from datapyrse.models.column_set import ColumnSet
+from datapyrse.models.entity import Entity
+from datapyrse.models.entity_reference import EntityReference
+from datapyrse.models.option_set import OptionSet
 
 DEFAULT_HEADERS: dict[str, str] = {
     "OData-MaxVersion": "4.0",
@@ -208,7 +208,7 @@ def parse_entity_to_web_api_body(
 
     logger.debug(parse_entity_to_web_api_body.__name__)
     if not entity:
-        msg = "Entity of type datapyrse.core.Entity is required"
+        msg = "Entity of type datapyrse.Entity is required"
         logger.error(msg)
         raise ValueError(msg)
     if not entity.attributes:

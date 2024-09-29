@@ -6,8 +6,8 @@ import logging
 
 from requests import Request, Response
 
-from datapyrse.core.models.methods import Method
-from datapyrse.core.services.dataverse_request import DataverseRequest
+from datapyrse.models.methods import Method
+from datapyrse.services.dataverse_request import DataverseRequest
 
 
 def get_delete_request(
@@ -112,7 +112,7 @@ class DeleteResponse:
 #     entity_id: str | None = None
 #     entity_name: str | None = None
 
-#     from datapyrse.core.services.service_client import ServiceClient
+#     from datapyrse.services.service_client import ServiceClient
 
 #     if not service_client or not isinstance(service_client, ServiceClient):
 #         logger.error("ServiceClient is required and must be of type ServiceClient")

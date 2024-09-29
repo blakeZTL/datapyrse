@@ -4,11 +4,11 @@ from dataclasses import dataclass, field
 from typing import Optional
 import xml.etree.ElementTree as ET
 
-from datapyrse.core.models.condition_expression import ConditionOperator
-from datapyrse.core.models.filter_expression import FilterExpression
-from datapyrse.core.models.link_entity import LinkEntity
-from datapyrse.core.models.order_expression import OrderExpression
-from datapyrse.core.models.column_set import ColumnSet
+from datapyrse.models.condition_expression import ConditionOperator
+from datapyrse.models.filter_expression import FilterExpression
+from datapyrse.models.link_entity import LinkEntity
+from datapyrse.models.order_expression import OrderExpression
+from datapyrse.models.column_set import ColumnSet
 
 
 @dataclass

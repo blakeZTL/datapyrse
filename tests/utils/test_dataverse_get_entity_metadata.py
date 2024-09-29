@@ -3,8 +3,8 @@ from typing import List
 from unittest import mock
 import pytest
 import requests
-from datapyrse.core.models.entity_metadata import *
-from datapyrse.core.utils.dataverse import get_metadata
+from datapyrse.models.entity_metadata import *
+from datapyrse.utils.dataverse import get_metadata
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def test_get_metadata_success(service_client, logger):
     with (
         mock.patch("requests.get") as mock_get,
         mock.patch(
-            "datapyrse.core.models.entity_metadata.OrgMetadata.from_json",
+            "datapyrse.models.entity_metadata.OrgMetadata.from_json",
             return_value=mock_metadata,
         ),
     ):
@@ -83,7 +83,7 @@ def test_get_metadata_no_logger(service_client):
     with (
         mock.patch("requests.get") as mock_get,
         mock.patch(
-            "datapyrse.core.models.entity_metadata.OrgMetadata.from_json",
+            "datapyrse.models.entity_metadata.OrgMetadata.from_json",
         ) as mock_metadata,
     ):
         mock_response = mock.Mock()

@@ -6,9 +6,9 @@ from dataclasses import dataclass, field
 from logging import Logger, getLogger
 from typing import Optional
 
-from datapyrse.core.models.entity import Entity
-from datapyrse.core.models.entity_metadata import OrgMetadata
-from datapyrse.core.utils.dataverse import (
+from datapyrse.models.entity import Entity
+from datapyrse.models.entity_metadata import OrgMetadata
+from datapyrse.utils.dataverse import (
     get_entity_collection_name_by_logical_name,
     DEFAULT_HEADERS,
 )

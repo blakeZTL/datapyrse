@@ -1,17 +1,17 @@
 from unittest import mock
 import uuid
 import pytest
-from datapyrse.core.models.column_set import ColumnSet
-from datapyrse.core.models.condition_expression import ConditionOperator
-from datapyrse.core.models.entity import Entity
-from datapyrse.core.models.entity_collection import EntityCollection
-from datapyrse.core.models.entity_metadata import (
+from datapyrse.models.column_set import ColumnSet
+from datapyrse.models.condition_expression import ConditionOperator
+from datapyrse.models.entity import Entity
+from datapyrse.models.entity_collection import EntityCollection
+from datapyrse.models.entity_metadata import (
     AttributeMetadata,
     EntityMetadata,
     OrgMetadata,
 )
-from datapyrse.core.models.query_expression import QueryExpression
-from datapyrse.core.services.retrieve_multiple import retrieve_multiple
+from datapyrse.models.query_expression import QueryExpression
+from datapyrse.services.retrieve_multiple import retrieve_multiple
 
 
 @pytest.fixture

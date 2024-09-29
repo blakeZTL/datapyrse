@@ -3,14 +3,14 @@ import uuid
 import pytest
 from unittest.mock import Mock, patch
 from uuid import UUID
-from datapyrse.core.models.entity import Entity
-from datapyrse.core.models.entity_reference import EntityReference
+from datapyrse.models.entity import Entity
+from datapyrse.models.entity_reference import EntityReference
 from requests import HTTPError
-from datapyrse.core.services.service_client import ServiceClient
-from datapyrse.core.services.delete import (
+from datapyrse.services.service_client import ServiceClient
+from datapyrse.services.delete import (
     delete_entity,
 )
-from datapyrse.core.models.entity_metadata import *
+from datapyrse.models.entity_metadata import *
 
 
 @pytest.fixture

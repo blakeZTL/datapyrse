@@ -7,7 +7,7 @@ from typing import List
 from enum import StrEnum
 
 
-from datapyrse.core.models.condition_expression import ConditionExpression
+from datapyrse.models.condition_expression import ConditionExpression
 
 
 class FilterOperator(StrEnum):

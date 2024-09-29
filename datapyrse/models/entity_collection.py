@@ -5,7 +5,7 @@ A module for creating entity collections in Dataverse
 from dataclasses import dataclass, field
 from typing import Optional, Union
 
-from datapyrse.core.models.entity import Entity
+from datapyrse.models.entity import Entity
 
 
 @dataclass

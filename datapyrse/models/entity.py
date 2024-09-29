@@ -8,8 +8,8 @@ from uuid import UUID
 from dataclasses import dataclass, field
 from typing import Dict, Any, List
 
-from datapyrse.core.models.entity_reference import EntityReference
-from datapyrse.core.models.option_set import OptionSet
+from datapyrse.models.entity_reference import EntityReference
+from datapyrse.models.option_set import OptionSet
 
 
 @dataclass

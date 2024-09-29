@@ -10,12 +10,12 @@ from uuid import UUID
 from requests import Response, Request
 
 
-from datapyrse.core.utils.dataverse import (
+from datapyrse.utils.dataverse import (
     parse_entity_to_web_api_body,
 )
-from datapyrse.core.models.entity import Entity
-from datapyrse.core.models.methods import Method
-from datapyrse.core.services.dataverse_request import DataverseRequest
+from datapyrse.models.entity import Entity
+from datapyrse.models.methods import Method
+from datapyrse.services.dataverse_request import DataverseRequest
 
 
 def get_create_request(

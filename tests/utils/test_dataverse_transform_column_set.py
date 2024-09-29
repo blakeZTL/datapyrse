@@ -3,7 +3,7 @@ from unittest import mock
 from uuid import uuid4
 
 # Assuming the ServiceClient class and transform_column_set method are in a module called my_module
-from datapyrse.core.utils.dataverse import transform_column_set
+from datapyrse.utils.dataverse import transform_column_set
 
 
 # Mock response data for the metadata endpoint

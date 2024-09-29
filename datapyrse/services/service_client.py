@@ -17,20 +17,20 @@ import requests
 from requests import Request, Response
 
 
-from datapyrse.core.models.column_set import ColumnSet
-from datapyrse.core.models.entity_metadata import OrgMetadata
-from datapyrse.core.models.query_expression import QueryExpression
-from datapyrse.core.services.create import CreateResponse
-from datapyrse.core.models.entity import Entity
-from datapyrse.core.services.dataverse_request import DataverseRequest
-from datapyrse.core.services.create import get_create_request
-from datapyrse.core.services.delete import DeleteResponse, get_delete_request
-from datapyrse.core.services.retrieve import RetrieveResponse, get_retrieve_request
-from datapyrse.core.services.retrieve_multiple import (
+from datapyrse.models.column_set import ColumnSet
+from datapyrse.models.entity_metadata import OrgMetadata
+from datapyrse.models.query_expression import QueryExpression
+from datapyrse.services.create import CreateResponse
+from datapyrse.models.entity import Entity
+from datapyrse.services.dataverse_request import DataverseRequest
+from datapyrse.services.create import get_create_request
+from datapyrse.services.delete import DeleteResponse, get_delete_request
+from datapyrse.services.retrieve import RetrieveResponse, get_retrieve_request
+from datapyrse.services.retrieve_multiple import (
     RetrieveMultipleResponse,
     get_retrieve_multiple_request,
 )
-from datapyrse.core.utils.dataverse import DEFAULT_HEADERS
+from datapyrse.utils.dataverse import DEFAULT_HEADERS
 
 
 class Prompt(StrEnum):
@@ -318,6 +318,17 @@ class ServiceClient:
             Exception: Raised if the service client is not ready, if the entity logical
                 name or ID is missing, if the column set transformation fails, or if
                 the entity cannot be found.
+
+        Example:
+            >>> from datapyrse import ServiceClient
+            >>> from datapyse.query import ColumnSet
+            >>>
+            >>> service_client = ServiceClient(tenant_id="...", resource_url="...")
+            >>> entity = service_client.retrieve(
+            ...     entity_logical_name="account",
+            ...     entity_id="...",
+            ...     column_set=ColumnSet(["name", "ownerid"])
+            ... )
         """
 
         if not entity_logical_name:
@@ -392,7 +403,7 @@ class ServiceClient:
 
         Example:
             >>> from datapyrse import ServiceClient
-            >>> from datapyse.Query import QueryExpression
+            >>> from datapyse.query import QueryExpression
             >>>
             >>> query = QueryExpression(
             ...     entity_name= "account",
