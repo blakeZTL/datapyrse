@@ -1,54 +1,91 @@
+"""
+A module for utility functions related to Dataverse
+"""
+
 import logging
 from logging import Logger
-from typing import List
-from datapyrse.core.models.entity import Entity
+from typing import Any, List
+
+
 from datapyrse.core.models.entity_metadata import EntityMetadata, OrgMetadata
+from datapyrse.core.models.column_set import ColumnSet
+from datapyrse.core.models.entity import Entity
 from datapyrse.core.models.entity_reference import EntityReference
 from datapyrse.core.models.option_set import OptionSet
-from datapyrse.core.services.service_client import ServiceClient
-import requests
+
+DEFAULT_HEADERS: dict[str, str] = {
+    "OData-MaxVersion": "4.0",
+    "OData-Version": "4.0",
+    "Accept": "application/json",
+    "Content-Type": "application/json; charset=utf-8",
+    "Prefer": "odata.include-annotations=*",
+}
 
 
 def get_entity_collection_name_by_logical_name(
-    service_client: ServiceClient, logical_name: str
+    org_metadata: OrgMetadata,
+    logical_name: str,
+    logger: Logger = logging.getLogger(__name__),
 ) -> str | None:
-    if not service_client.IsReady:
-        raise Exception("Service client is not ready")
+    """
+    Retrieves the collection name for an entity based on the logical name.
+
+    Args:
+        org_metadata (OrgMetadata): The metadata for the organization.
+        logical_name (str): The logical name of the entity.
+        logger (Logger): The logger to use for logging.
+
+    Returns:
+        str: The collection name for the entity.
+        None: If no metadata found for the entity.
+
+    Raises:
+        ValueError: If the logical name is not provided.
+        ValueError: If the organization metadata is not provided.
+        ValueError: If the organization metadata entities are not provided.
+    """
 
     if not logical_name:
-        raise Exception("Logical name is required")
+        msg = "Logical name is required"
+        logger.error(msg)
+        raise ValueError(msg)
 
-    logging.debug("Retrieving entity collection name")
-    endpoint = f"api/data/v9.2/entities"
-    headers = {
-        "Authorization": f"Bearer {service_client.get_access_token()}",
-        "OData-MaxVersion": "4.0",
-        "OData-Version": "4.0",
-        "Accept": "application/json",
-        "Content-Type": "application/json; charset=utf-8",
-    }
-    select = "$select=logicalcollectionname,logicalname,name"
-    filter = f"$filter=logicalname eq '{logical_name}'"
-    response = requests.get(
-        f"{service_client.resource_url}/{endpoint}?{select}&{filter}",
-        headers=headers,
-    )
-    response.raise_for_status()
-    if not response.json()["value"]:
+    if not org_metadata:
+        msg = "org_metadata required"
+        logger.error(msg)
+        raise ValueError(msg)
+    if not org_metadata.entities:
+        logger.warning(
+            "Entities not found on OrgMetadata. Returning collection name of None"
+        )
         return None
-    else:
-        return response.json()["value"][0]["logicalcollectionname"]
+    entity_metadata: EntityMetadata | None = next(
+        (
+            metadata
+            for metadata in org_metadata.entities
+            if metadata.logical_name == logical_name
+        ),
+        None,
+    )
+    if not entity_metadata:
+        logger.warning(
+            "No matching metadata found for %s. Returning collection name of None",
+            logical_name,
+        )
+        return None
+    logger.debug("Returning %s.", entity_metadata.logical_collection_name)
+    return entity_metadata.logical_collection_name
 
 
 def transform_column_set(
-    service_client: ServiceClient, entity_name: str, column_set: List[str]
+    entity_metadata: EntityMetadata, column_set: ColumnSet
 ) -> List[str]:
     """
     Transforms the column set based on the metadata for the given entity.
     If a column is a lookup or other non-primitive type, transforms it accordingly.
 
     Args:
-        service_client (ServiceClient): The service client to use for making requests.
+        entity_metadata (EntityMetadata): The metadata for the entity.
         entity_name (str): The logical name of the entity.
         column_set (List[str]): The list of columns to transform.
 
@@ -56,27 +93,26 @@ def transform_column_set(
         List[str]: The transformed column set.
 
     Raises:
-        Exception: If the attribute metadata is not found for a column.
+        Exception: If the entity metadata is not found, if the entity metadata attributes are not found,
+            or if the column set is not found.
     """
-    # Fetch the entity metadata
-    metadata_endpoint = f"{service_client.resource_url}/api/data/v9.2/EntityDefinitions(LogicalName='{entity_name}')/Attributes?$select=LogicalName,AttributeType"
-    headers = {
-        "Authorization": f"Bearer {service_client.get_access_token()}",
-        "OData-MaxVersion": "4.0",
-        "OData-Version": "4.0",
-        "Accept": "application/json",
-        "Content-Type": "application/json; charset=utf-8",
-    }
-    response = requests.get(metadata_endpoint, headers=headers)
-    response.raise_for_status()
-    metadata = response.json()
-
-    # Transform the column set based on the metadata
-    transformed_column_set = []
-    for column in column_set:
+    if not entity_metadata:
+        raise ValueError("Entity metadata is required")
+    if not entity_metadata.attributes:
+        raise ValueError("Entity metadata attributes not found")
+    if not column_set:
+        raise ValueError("Column set is required")
+    if not column_set.columns:
+        raise ValueError("Column set columns not found")
+    transformed_column_set: List[str] = []
+    for column in column_set.columns:
         # Find the attribute metadata for the column
         attribute_metadata = next(
-            (attr for attr in metadata["value"] if attr["LogicalName"] == column),
+            (
+                attr
+                for attr in entity_metadata.attributes
+                if attr.logical_name == column
+            ),
             None,
         )
         basic_attribute_types = [
@@ -88,19 +124,16 @@ def transform_column_set(
             "Status",
         ]
         if attribute_metadata:
-            if (
-                attribute_metadata["AttributeType"] == "Lookup"
-                or attribute_metadata["AttributeType"] == "Owner"
-            ):
+            if attribute_metadata.attribute_type in ["Lookup", "Owner"]:
                 # If it's a lookup, append _value to the column name
                 transformed_column_set.append(f"_{column}_value")
-            elif attribute_metadata["AttributeType"] in basic_attribute_types:
+            elif attribute_metadata.attribute_type in basic_attribute_types:
                 # If it's a state, append _value to the column name
                 transformed_column_set.append(column)
             else:
                 transformed_column_set.append(column)
         else:
-            raise Exception(f"Attribute metadata not found for column: {column}")
+            raise ValueError(f"Attribute metadata not found for column: {column}")
 
     return transformed_column_set
 
@@ -125,9 +158,13 @@ def get_entity_metadata(
         Exception: If the entity metadata is not found.
     """
     if not org_metadata:
-        raise Exception("Organization metadata is required")
+        msg = "Organization metadata is required"
+        logger.error(msg)
+        raise ValueError(msg)
     if not org_metadata.entities:
-        raise Exception("Organization metadata entities not found")
+        msg = "Organization metadata entities not found"
+        logger.error(msg)
+        raise ValueError(msg)
     entity_metadata = next(
         (
             data
@@ -137,103 +174,70 @@ def get_entity_metadata(
         None,
     )
     if not entity_metadata:
-        raise Exception(f"Entity metadata not found for entity: {entity_logical_name}")
+        msg = f"Entity metadata not found for entity: {entity_logical_name}"
+        logger.error(msg)
+        raise ValueError(msg)
 
     return entity_metadata
 
 
-def get_metadata(
-    service_client: ServiceClient, logger: Logger = logging.getLogger(__name__)
-) -> OrgMetadata:
-    """
-    Retrieves the metadata for all entities from the Dataverse service.
-
-    Args:
-        service_client (ServiceClient): The service client to use for making requests.
-        logger (logging.Logger): The logger to use for logging.
-
-    Returns:
-        OrgMetadata: The metadata for the organization.
-
-    Raises:
-        Exception: If no metadata is found
-    """
-    endpoint = f"api/data/v9.2/EntityDefinitions?$expand=Attributes($select=LogicalName,AttributeType,SchemaName)"
-    headers = {
-        "Authorization": f"Bearer {service_client.get_access_token()}",
-        "OData-MaxVersion": "4.0",
-        "OData-Version": "4.0",
-        "Accept": "application/json",
-        "Content-Type": "application/json; charset=utf-8",
-    }
-    response = requests.get(
-        f"{service_client.resource_url}/{endpoint}", headers=headers
-    )
-    response.raise_for_status()
-    response_json = response.json()
-    if not response_json or not response_json["value"]:
-        logger.error("No metadata found")
-        raise Exception("No metadata found")
-
-    orgMetadata = OrgMetadata.from_json(response_json)
-    if not orgMetadata.entities:
-        logger.warning("No entity metadata found")
-    else:
-        logger.debug(f"Metadata fetched: {str(orgMetadata.entities.count)}")
-    return orgMetadata
-
-
 def parse_entity_to_web_api_body(
     entity: Entity,
-    service_client: ServiceClient,
+    org_metadata: OrgMetadata,
     logger: Logger = logging.getLogger(__name__),
-    entity_logical_collection_name: str | None = None,
-) -> dict:
+) -> dict[str, Any] | None:
     """
-    Parses an entity object to a dictionary that can be used as the body of a Web API request.
+    Parses an entity object to a Web API body.
 
     Args:
         entity (Entity): The entity object to parse.
-        service_client (ServiceClient): The service client to use for making requests.
-        logger (logging.Logger): The logger to use for logging.
+        org_metadata (OrgMetadata): The metadata for the organization.
+        logger (Logger): The logger to use for logging.
 
     Returns:
-        dict: The parsed entity as a dictionary.
+        dict: The parsed Web API body.
 
     Raises:
-        Exception: If the service client is not ready, the entity is not of type Entity, or the entity metadata
-            is not found.
-
+        ValueError: If the entity is not provided.
+        ValueError: If the entity has no attributes.
+        ValueError: If the organization metadata is not provided.
+        ValueError: If the entity metadata is not found.
+        ValueError: If the entity metadata attributes are not found.
+        ValueError: If the attribute metadata is not found for a column.
     """
 
     logger.debug(parse_entity_to_web_api_body.__name__)
-    if not service_client.IsReady:
-        msg = "Service client is not ready"
-        logger.error(msg)
-        raise Exception(msg)
-    if not entity or not isinstance(entity, Entity):
+    if not entity:
         msg = "Entity of type datapyrse.core.Entity is required"
         logger.error(msg)
-        raise Exception(msg)
+        raise ValueError(msg)
+    if not entity.attributes:
+        msg = "Entity has no attributes to parse"
+        logger.warning(msg)
+        return None
+    if not org_metadata:
+        msg = "Organization Metadata required."
+        logger.error(msg)
+        raise ValueError(msg)
 
     entity_metadata: EntityMetadata = get_entity_metadata(
-        entity.entity_logical_name, service_client.metadata, logger
+        entity.entity_logical_name, org_metadata, logger
     )
 
     if not entity_metadata:
-        raise Exception("Entity metadata not found")
+        raise ValueError("Entity metadata not found")
 
     if not entity_metadata.attributes:
-        raise Exception("Entity metadata attributes not found")
+        raise ValueError("Entity metadata attributes not found")
 
-    logger.debug(f"Metadata fetched: {str(entity_metadata.attributes.count)}")
+    logger.debug("Metadata fetched: %s", len(entity_metadata.attributes))
 
-    api_body: dict = {}
+    api_body: dict[str, Any] = {}
     for attr in entity.attributes:
         logger.debug(attr)
         value = entity.attributes[attr]
         if isinstance(value, EntityReference):
-            logger.debug(f"{attr} is EntityReference")
+            logger.debug("%s is EntityReference", attr)
             # Find the attribute metadata for the column
             attribute_metadata = next(
                 (
@@ -243,38 +247,38 @@ def parse_entity_to_web_api_body(
                 ),
                 None,
             )
-            if attribute_metadata and attribute_metadata.attribute_type == "Lookup":
-                logger.debug(f"{attr} is Lookup")
-                binding_to: str | None = None
-                if entity_logical_collection_name:
-                    binding_to = entity_logical_collection_name
-                else:
-                    if service_client.metadata.entities:
-                        binding_to = next(
-                            (
-                                data.logical_collection_name
-                                for data in service_client.metadata.entities
-                                if data.logical_name == value.entity_logical_name
-                            ),
-                            None,
-                        )
-
-                if not binding_to:
-                    raise Exception(
-                        f"Entity collection name not found for entity: {value.entity_logical_name}"
-                    )
-                logger.debug(f"Binding to {binding_to}")
-                api_body[f"{attribute_metadata.schema_name}@odata.bind"] = (
-                    f"/{binding_to}({str(value.entity_id)})"
-                )
-
-            else:
+            if (
+                not attribute_metadata
+                or not attribute_metadata.attribute_type == "Lookup"
+            ):
                 msg = f"Attribute metadata not found for column: {attr}"
                 logger.error(msg)
-                logger.error(f"Attribute metadata: {attribute_metadata}")
-                raise Exception(msg)
+                logger.error("Attribute metadata: %s", attribute_metadata)
+                raise ValueError(msg)
+
+            logger.debug("%s is Lookup", attr)
+            binding_to: str | None = None
+            if org_metadata.entities:
+                binding_to = next(
+                    (
+                        data.logical_collection_name
+                        for data in org_metadata.entities
+                        if data.logical_name == value.entity_logical_name
+                    ),
+                    None,
+                )
+
+            if not binding_to:
+                raise ValueError(
+                    f"Entity collection name not found for entity: {value.entity_logical_name}"
+                )
+            logger.debug("Binding to %s", binding_to)
+            api_body[f"{attribute_metadata.schema_name}@odata.bind"] = (
+                f"/{binding_to}({str(value.entity_id)})"
+            )
+
         elif isinstance(value, OptionSet):
-            logger.debug(f"{attr} is OptionSet")
+            logger.debug("%s is OptionSet", attr)
             api_body[attr] = value.value
         else:
             api_body[attr] = value

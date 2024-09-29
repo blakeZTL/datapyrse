@@ -1,3 +1,7 @@
+"""
+A module for creating entities in Dataverse
+"""
+
 import logging
 from logging import Logger
 from uuid import UUID
@@ -71,7 +75,7 @@ class Entity:
         """
         self.attributes[key] = value
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """
         Converts the entity instance into a dictionary.
 
@@ -99,19 +103,18 @@ class Entity:
         Returns:
             Dict[str, Any]: A dictionary of parsed attributes ready for internal use.
         """
-        parsed_attributes = {}
+        parsed_attributes: dict[str,Any] = {}
         for attribute in attributes:
-            """Parse an attribute value."""
             if attribute.startswith("@"):
                 continue
-            elif attribute.startswith("_") and attribute.endswith("_value"):
+            if attribute.startswith("_") and attribute.endswith("_value"):
                 if not self.attributes.get(attribute):
                     self.logger.debug(f"Skipping attribute {attribute}; value is None")
                     continue
 
                 attribute_name: str = attribute[1:-6]
-                self.logger.debug(f"{self._parse_attributes.__name__} - Attribute: {attribute_name}")
-                self.logger.debug(f"ID: {self.attributes.get(attribute)}")
+                self.logger.debug("%s - Attribute: %s", self._parse_attributes.__name__, attribute_name)
+                self.logger.debug("ID: %s", self.attributes.get(attribute))
                 self.logger.debug(
                     f"Logical name: {self.attributes.get(f"{attribute}@Microsoft.Dynamics.CRM.lookuplogicalname")}")
                 self.logger.debug(

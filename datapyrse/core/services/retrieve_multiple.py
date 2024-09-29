@@ -1,110 +1,107 @@
-import logging
-from logging import Logger
+"""
+A module for retrieving multiple entities from Dataverse
+"""
 
-import requests
+from dataclasses import dataclass, field
+from logging import Logger, getLogger
+
+from requests import Request, Response
 
 from datapyrse.core.models.entity import Entity
 from datapyrse.core.models.entity_collection import EntityCollection
+from datapyrse.core.models.methods import Method
 from datapyrse.core.models.query_expression import QueryExpression
+from datapyrse.core.services.dataverse_request import DataverseRequest
 
 
-def retrieve_multiple(
-    service_client,
+def get_retrieve_multiple_request(
+    dataverse_request: DataverseRequest,
     query: QueryExpression,
-    logger: Logger = logging.getLogger(__name__),
-):
+    logger: Logger = getLogger(__name__),
+) -> Request:
     """
-    Retrieves multiple entities from Dataverse using a query expression.
-
-    This function sends a GET request to the Dataverse Web API to retrieve multiple
-    entities that match the given query expression. It uses the FetchXML generated
-    from the query to perform the retrieval.
+    Prepare a retrieve multiple request for Dataverse
 
     Args:
-        service_client (ServiceClient): The service client used to authenticate
-            and send the request.
-        query (QueryExpression): The query expression that defines the filtering
-            and selection of entities to retrieve.
-        logger (logging.Logger, optional): A logger instance for logging debug
-            and error messages. Defaults to None.
+        dataverse_request (DataverseRequest): DataverseRequest object
+        query (QueryExpression): QueryExpression object
+        logger (Logger): Logger object for logging
 
     Returns:
-        EntityCollection: A collection of entities matching the query.
+        Request: Request object for the retrieve multiple request
 
     Raises:
-        Exception: Raised if the service client is not ready, the query is invalid,
-            or the API request fails.
+        ValueError: If DataverseRequest is not provided
+    """
+    if not dataverse_request:
+        msg = "DataverseRequest required and must be an instance of datapyrse.DataverseRequest"
+        logger.error(msg)
+        raise ValueError(msg)
+    if not query:
+        msg = "QueryExpression required and must be an instance of datapyrse.QueryExpression"
+        logger.error(msg)
+        raise ValueError(msg)
+    fetch_xml: str = query.fetch_xml
+    if not fetch_xml:
+        msg = "Failed to parse query expression"
+        logger.error(msg)
+        raise ValueError(msg)
+    request: Request = Request(
+        method=Method.GET.value,
+        headers=dataverse_request.headers,
+    )
+    if "?" in dataverse_request.endpoint:
+        dataverse_request.endpoint += f"&fetchXml={fetch_xml}"
+    else:
+        dataverse_request.endpoint += f"?fetchXml={fetch_xml}"
+
+    request.url = dataverse_request.endpoint
+
+    return request
+
+
+@dataclass
+class RetrieveMultipleResponse:
+    """
+    Parse the response from a retrieve multiple request to extract entities
+
+    Args:
+        response (Response): Response object from the retrieve multiple request
+        entity_logical_name (str): Logical name of the entity
+        logger (Logger): Logger object for logging
+
+    Raises:
+        ValueError: If Response or entity_logical_name is not provided
     """
 
-    from datapyrse.core.services.service_client import ServiceClient
+    response: Response
+    entity_logical_name: str
+    logger: Logger = field(default_factory=lambda: getLogger(__name__))
 
-    if not service_client or not isinstance(service_client, ServiceClient):
-        raise Exception("Service client is required and must be of type ServiceClient")
-
-    logger = service_client._prepare_request(logger)
-
-    if not query:
-        raise Exception("Query is required")
-    else:
-        if not isinstance(query, QueryExpression):
-            raise Exception("Query must be a QueryExpression")
-
-    entity_logical_name: str = query.entity_name
-    if not entity_logical_name:
-        raise ValueError("Entity logical name not found in query")
-
-    if not service_client.metadata.entities:
-        raise Exception("Metadata entities not found")
-
-    entity_plural_name: str | None = next(
-        (
-            data.logical_collection_name
-            for data in service_client.metadata.entities
-            if data.logical_name == entity_logical_name
-        ),
-        None,
-    )
-    if not entity_plural_name:
-        raise Exception("Entity collection name not found")
-
-    logger.debug("Retrieving entities")
-    endpoint: str = f"api/data/v9.2/{entity_plural_name}"
-    headers: dict = service_client._get_request_headers()
-
-    fetch_xml: str = query.to_fetchxml()
-    if fetch_xml:
-        endpoint += f"?fetchXml={fetch_xml}"
-    else:
-        raise Exception("Failed to parse query expression")
-
-    url: str = f"{service_client.resource_url}/{endpoint}"
-
-    response: requests.Response
-    try:
-        response = requests.get(
-            url,
-            headers=headers,
+    def __post_init__(self):
+        if not self.response:
+            msg = "Response required and must be an instance of requests.Response"
+            self.logger.error(msg)
+            raise ValueError(msg)
+        if not self.entity_logical_name:
+            msg = "entity_logical_name required and must be a string"
+            self.logger.error(msg)
+            raise ValueError(msg)
+        self.entity_collection: EntityCollection = EntityCollection(
+            entity_logical_name=self.entity_logical_name
         )
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        print(fetch_xml)
-        logger.error(f"Failed to retrieve entities: {e}")
-        raise Exception("Failed to retrieve entities")
-    if not response.json().get("value"):
-        return EntityCollection(entity_logical_name=entity_logical_name, entities=[])
+        self._parse_response()
 
-    entities: EntityCollection = EntityCollection(
-        entity_logical_name=entity_logical_name
-    )
-    logger.debug(f"Entity logical name: {entity_logical_name}")
-    logger.debug(f"Retrieved {len(response.json().get('value'))} entities")
-    logger.debug(f"Entities: {response.json().get('value')}")
-    for entity_data in response.json().get("value"):
-        entity: Entity = Entity(
-            entity_logical_name=entity_logical_name,
-            attributes=entity_data,
-            logger=logger,
-        )
-        entities.add_entity(entity)
-
-    return entities
+    def _parse_response(self) -> None:
+        self.response.raise_for_status()
+        if not self.response.json().get("value") or not isinstance(
+            self.response.json().get("value"), list
+        ):
+            return
+        for entity_data in self.response.json().get("value"):
+            entity: Entity = Entity(
+                entity_logical_name=self.entity_logical_name,
+                attributes=entity_data,
+                logger=self.logger,
+            )
+            self.entity_collection.add_entity(entity)

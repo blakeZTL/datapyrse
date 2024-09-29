@@ -1,26 +1,47 @@
+""" A module for creating order expressions for queries """
+
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class OrderType(Enum):
+class OrderType(StrEnum):
+    """
+    Represents an order type in Dataverse or similar systems.
+
+    This class encapsulates the core structure and behavior of an order type
+    object in Dataverse, including the available order types.
+
+    Attributes:
+        ASC (str): The ascending order type.
+        DESC (str): The descending order type.
+    """
+
     ASC = "ASC"
     DESC = "DESC"
 
 
 @dataclass
 class OrderExpression:
+    """
+    Represents an order expression in Dataverse or similar systems.
+
+    This class encapsulates the core structure and behavior of an order expression
+    object in Dataverse, including the attribute name and order type.
+
+    Attributes:
+        attribute_name (str): The name of the attribute to order by.
+        order_type (OrderType): The order type to use when ordering.
+
+    Raises:
+        ValueError: If attribute_name or order_type are not provided.
+    """
+
     attribute_name: str
     order_type: OrderType
 
     def __post_init__(self) -> None:
         if not self.attribute_name:
-            raise Exception("Attribute name is required")
+            raise ValueError("Attribute name is required")
 
         if not self.order_type:
-            raise Exception("Order type is required")
-
-        if not isinstance(self.attribute_name, str):
-            raise Exception("Attribute name must be a string")
-
-        if not isinstance(self.order_type, OrderType):
-            raise Exception("Order type must be an OrderType")
+            raise ValueError("Order type is required")

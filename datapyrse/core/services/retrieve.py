@@ -1,105 +1,129 @@
-import logging
-from logging import Logger
-import uuid
-from typing import List
+"""
+A module for retrieving entities from Dataverse
+"""
 
-import requests
-from requests import Response
+from dataclasses import dataclass, field
+from logging import Logger, getLogger
+from typing import List, Optional
+
+from requests import Request, Response
 
 from datapyrse.core.models.column_set import ColumnSet
 from datapyrse.core.models.entity import Entity
+from datapyrse.core.models.entity_metadata import EntityMetadata
+from datapyrse.core.models.methods import Method
+from datapyrse.core.services.dataverse_request import DataverseRequest
 from datapyrse.core.utils.dataverse import (
     transform_column_set,
 )
 
 
-def retrieve(
-    service_client,
-    entity_logical_name: str,
-    entity_id: uuid.UUID,
+def get_retrieve_request(
+    dataverse_request: DataverseRequest,
     column_set: ColumnSet,
-    logger: Logger = logging.getLogger(__name__),
-) -> Entity:
+    logger: Logger = getLogger(__name__),
+) -> Request:
     """
-    Retrieves an entity from Dataverse by its logical name and ID.
-
-    This function sends a GET request to the Dataverse Web API to fetch an entity
-    based on its logical name and unique identifier (entity_id). It allows selecting
-    specific columns (fields) to be retrieved via the column_set parameter.
+    Prepare a retrieve request for Dataverse
 
     Args:
-        service_client (ServiceClient): The service client used to authenticate
-            and send the request.
-        entity_logical_name (str): The logical name of the entity in Dataverse.
-        entity_id (uuid.UUID): The unique identifier of the entity to retrieve.
-        column_set (ColumnSet): A list of attribute names (columns) to be retrieved
-            from the entity.
-        logger (logging.Logger, optional): A logger instance for logging debug
-            and error messages. Defaults to None.
+        dataverse_request (DataverseRequest): DataverseRequest object
+        logger (Logger): Logger object for logging
 
     Returns:
-        Entity: The retrieved entity with its attributes populated.
+        Request: Request object for the retrieve request
 
     Raises:
-        Exception: Raised if the service client is not ready, if the entity logical
-            name or ID is missing, if the column set transformation fails, or if
-            the entity cannot be found.
+        ValueError: If DataverseRequest is not provided
     """
-
-    from datapyrse.core.services.service_client import ServiceClient
-
-    if not service_client or not isinstance(service_client, ServiceClient):
-        raise Exception("Service client is required and must be of type ServiceClient")
-
-    logger = service_client._prepare_request(logger)
-
-    if not entity_logical_name:
-        raise Exception("Entity plural name is required")
-
-    if not entity_id:
-        raise Exception("Entity ID is required")
-
+    logger.debug(__name__)
+    if not dataverse_request:
+        msg = "DataverseRequest required and must be an instance of datapyrse.DataverseRequest"
+        logger.error(msg)
+        raise ValueError(msg)
     if not column_set:
-        raise Exception("Column set is required")
-
-    if not service_client.metadata.entities:
-        raise Exception("Metadata entities not found")
-    entity_plural_name: str | None = next(
+        msg = "ColumnSet required and must be an instance of datapyrse.ColumnSet"
+        logger.error(msg)
+        raise ValueError(msg)
+    entity: Entity = dataverse_request.entity
+    if not dataverse_request.org_metadata.entities:
+        msg = "Entities not found on OrgMetadata"
+        logger.error(msg)
+        raise ValueError(msg)
+    entity_metadata: Optional[EntityMetadata] = next(
         (
-            data.logical_collection_name
-            for data in service_client.metadata.entities
-            if data.logical_name == entity_logical_name
+            metadata
+            for metadata in dataverse_request.org_metadata.entities
+            if metadata.logical_name == entity.entity_logical_name
         ),
         None,
     )
-    if not entity_plural_name:
-        raise Exception("Entity collection name not found")
-
-    select: str | None = None
+    if not entity_metadata:
+        msg = f"No matching metadata found for {entity.entity_logical_name}"
+        logger.error(msg)
+        raise ValueError(msg)
+    select: Optional[str] = None
     if isinstance(column_set, list):
         parsed_column_set: List[str] = transform_column_set(
-            service_client, entity_logical_name, column_set
+            entity_metadata=entity_metadata,
+            column_set=column_set,
         )
-        if not parsed_column_set:
-            raise Exception("Failed to transform column set")
         select = ",".join(parsed_column_set)
 
-    logger.debug("Retrieving entity")
-    endpoint: str = f"api/data/v9.2/{entity_plural_name}({str(entity_id)})"
-    headers: dict = service_client._get_request_headers()
-    url: str = f"{service_client.resource_url}/{endpoint}"
+    request: Request = Request(
+        method=Method.GET.value,
+        url=dataverse_request.endpoint,
+        headers=dataverse_request.headers,
+    )
     if select:
-        url = f"{url}?$select={select}"
+        if "?" in request.url:
+            request.url = f"{request.url}&$select={select}"
+        else:
+            request.url = f"{request.url}?$select={select}"
+    return request
 
-    response: Response = requests.get(
-        url,
-        headers=headers,
-    )
-    response.raise_for_status()
-    entity: Entity = Entity(
-        entity_id=entity_id,
-        entity_logical_name=entity_logical_name,
-        attributes=response.json(),
-        logger=logger,
-    )
-    return entity
+
+@dataclass
+class RetrieveResponse:
+    """
+    Parse the response from a retrieve request to extract the entity
+
+    Args:
+        response (Response): Response object from the retrieve request
+        entity (Entity): Entity object retrieved
+        logger (Logger): Logger object for logging
+
+    Raises:
+        ValueError: If response or entity is not provided
+        ValueError: If entity is not parsed from response
+    """
+
+    response: Response
+    entity: Entity
+    logger: Logger = field(default_factory=lambda: getLogger(__name__))
+
+    def __post_init__(
+        self,
+    ):
+        self.logger.debug(__name__)
+        if not self.response:
+            msg = "Response required and must be an instance of requests.Response"
+            self.logger.error(msg)
+            raise ValueError(msg)
+        if not self.entity:
+            msg = "Entity required and must be an instance of datapyrse.Entity"
+            self.logger.error(msg)
+            raise ValueError(msg)
+        if not self.response.json():
+            msg = "Entity not found in response"
+            self.logger.error(msg)
+            raise ValueError(msg)
+        self.logger.debug("Response json %s", self.response.json())
+        parsed_entity: Entity = Entity(
+            entity_id=self.entity.entity_id,
+            entity_logical_name=self.entity.entity_logical_name,
+            attributes=self.response.json(),
+            logger=self.logger,
+        )
+        self.logger.debug(parsed_entity)
+        self.entity = parsed_entity
