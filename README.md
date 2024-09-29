@@ -19,8 +19,8 @@ pip install datapyrse
 ## Usage
 ```py
 import uuid
-from datapyrse.core import *
-from datapyrse.core.query import *
+from datapyrse import *
+from datapyrse.query import *
 
 
 service: ServiceClient = ServiceClient(

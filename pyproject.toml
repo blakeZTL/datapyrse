@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "datapyrse"
-version = "0.5.2"
+version = "0.6.0"
 description = "A package used to mimic the functionality of the Dataverse SDK."
 readme = "README.md"
 authors = [{ name = "Blake Bradford" }]

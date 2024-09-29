@@ -2,14 +2,14 @@ import logging
 import uuid
 import pytest
 from unittest import mock
-from datapyrse.core.models.entity import Entity, EntityReference, OptionSet
-from datapyrse.core.models.entity_metadata import (
+from datapyrse.models.entity import Entity, EntityReference, OptionSet
+from datapyrse.models.entity_metadata import (
     AttributeMetadata,
     EntityMetadata,
     OrgMetadata,
 )
-from datapyrse.core.services.service_client import ServiceClient
-from datapyrse.core.utils.dataverse import (
+from datapyrse.services.service_client import ServiceClient
+from datapyrse.utils.dataverse import (
     parse_entity_to_web_api_body,
     get_entity_metadata,
 )
@@ -111,13 +111,11 @@ def test_parse_entity_to_web_api_body_service_not_ready(service_client, entity, 
 
 def test_parse_entity_to_web_api_body_invalid_entity(service_client, logger):
     # Pass an invalid entity (None)
-    with pytest.raises(
-        Exception, match="Entity of type datapyrse.core.Entity is required"
-    ):
+    with pytest.raises(Exception, match="Entity of type datapyrse.Entity is required"):
         parse_entity_to_web_api_body(None, service_client, logger)
 
 
-@mock.patch("datapyrse.core.utils.dataverse.get_entity_metadata")
+@mock.patch("datapyrse.utils.dataverse.get_entity_metadata")
 def test_parse_entity_to_web_api_body_metadata_not_found(
     mock_get_entity_metadata, service_client, entity, logger
 ):

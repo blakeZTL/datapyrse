@@ -1,5 +1,5 @@
 import pytest
-from datapyrse.core.models.column_set import ColumnSet
+from datapyrse.models.column_set import ColumnSet
 
 
 def test_column_set_with_list():

@@ -1,5 +1,5 @@
 import pytest
-from datapyrse.core.models.condition_expression import (
+from datapyrse.models.condition_expression import (
     ConditionExpression,
     ConditionOperator,
 )

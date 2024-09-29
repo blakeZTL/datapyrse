@@ -2,10 +2,10 @@ import pytest
 from unittest import mock
 import uuid
 from requests.exceptions import HTTPError
-from datapyrse.core.models.entity_metadata import *
-from datapyrse.core.models.entity_reference import EntityReference
-from datapyrse.core.services.retrieve import retrieve
-from datapyrse.core.models.entity import Entity
+from datapyrse.models.entity_metadata import *
+from datapyrse.models.entity_reference import EntityReference
+from datapyrse.services.retrieve import retrieve
+from datapyrse.models.entity import Entity
 
 
 @pytest.fixture
@@ -101,7 +101,7 @@ def test_retrieve_entity_collection_not_found(service_client):
         retrieve(service_client, "account", uuid.uuid4(), ["name"])
 
 
-@mock.patch("datapyrse.core.services.retrieve.transform_column_set")
+@mock.patch("datapyrse.services.retrieve.transform_column_set")
 def test_retrieve_transform_column_set_failure(
     mock_transform_column_set,
     service_client,
@@ -112,7 +112,7 @@ def test_retrieve_transform_column_set_failure(
         retrieve(service_client, "account", uuid.uuid4(), ["name"])
 
 
-@mock.patch("datapyrse.core.services.retrieve.transform_column_set")
+@mock.patch("datapyrse.services.retrieve.transform_column_set")
 @mock.patch("requests.get")
 def test_retrieve_success(
     mock_requests_get,
@@ -164,7 +164,7 @@ def test_retrieve_success(
     )
 
 
-@mock.patch("datapyrse.core.services.retrieve.transform_column_set")
+@mock.patch("datapyrse.services.retrieve.transform_column_set")
 @mock.patch("requests.get")
 def test_retrieve_http_error(
     mock_requests_get,

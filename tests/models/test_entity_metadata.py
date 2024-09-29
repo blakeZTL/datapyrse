@@ -1,4 +1,4 @@
-from datapyrse.core.models.entity_metadata import *
+from datapyrse.models.entity_metadata import *
 
 
 def test_attribute_metadata_from_json():

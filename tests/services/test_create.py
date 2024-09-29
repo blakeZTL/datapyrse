@@ -2,18 +2,18 @@ from typing import List
 import uuid
 import pytest
 from unittest import mock
-from datapyrse.core.models.entity import Entity
-from datapyrse.core.models.entity_metadata import (
+from datapyrse.models.entity import Entity
+from datapyrse.models.entity_metadata import (
     AttributeMetadata,
     EntityMetadata,
     OrgMetadata,
 )
-from datapyrse.core.services.service_client import ServiceClient
-from datapyrse.core.utils.dataverse import (
+from datapyrse.services.service_client import ServiceClient
+from datapyrse.utils.dataverse import (
     get_entity_collection_name_by_logical_name,
     parse_entity_to_web_api_body,
 )
-from datapyrse.core.services.create import CreateRequest
+from datapyrse.services.create import CreateRequest
 
 
 @pytest.fixture
@@ -136,7 +136,7 @@ def test_create_request_missing_logical_name(service_client, entity, logger):
 
 
 @mock.patch("requests.post")
-@mock.patch("datapyrse.core.services.create.parse_entity_to_web_api_body")
+@mock.patch("datapyrse.services.create.parse_entity_to_web_api_body")
 def test_create_request_http_failure(
     mock_parse_entity_to_web_api_body,
     mock_requests_post,

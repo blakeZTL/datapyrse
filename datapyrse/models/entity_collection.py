@@ -1,7 +1,11 @@
-from dataclasses import dataclass, field
-from typing import List, Optional
+"""
+A module for creating entity collections in Dataverse
+"""
 
-from datapyrse.core.models.entity import Entity
+from dataclasses import dataclass, field
+from typing import Optional, Union
+
+from datapyrse.models.entity import Entity
 
 
 @dataclass
@@ -11,20 +15,17 @@ class EntityCollection:
     """
 
     entity_logical_name: Optional[str] = field(default=None)
-    entities: Optional[List[Entity]] = field(default_factory=list)
+    entities: Optional[list[Entity]] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         if not self.entities:
             self.entities = []
-        else:
-            if not all(isinstance(entity, Entity) for entity in self.entities):
-                raise ValueError("All entities must be instances of Entity class")
+        if not self.entity_logical_name:
+            raise ValueError("Entity logical name is required")
 
     def add_entity(self, entity: Entity) -> None:
         """Add an entity to the collection."""
-        if not isinstance(entity, Entity):
-            raise ValueError("Entity must be an instance of Entity class")
-        if entity.entity_id is None or entity.entity_logical_name is None:
+        if not entity.entity_id or not entity.entity_logical_name:
             raise ValueError("Entity must have an ID and a logical name")
         if not self.entities:
             self.entities = []
@@ -33,9 +34,7 @@ class EntityCollection:
 
     def remove_entity(self, entity: Entity) -> None:
         """Remove an entity from the collection."""
-        if not isinstance(entity, Entity):
-            raise ValueError("Entity must be an instance of Entity class")
-        if entity.entity_id is None or entity.entity_logical_name is None:
+        if not entity.entity_id or not entity.entity_logical_name:
             raise ValueError("Entity must have an ID and a logical name")
         if self.entities:
             self.entities = [
@@ -47,10 +46,12 @@ class EntityCollection:
                 )
             ]
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Union[str, list[dict[str, str]]]]:
         """Convert EntityCollection instance to a dictionary."""
         if not self.entities:
             self.entities = []
+        if not self.entity_logical_name:
+            raise ValueError("Entity logical name is required")
         return {
             "logical_name": self.entity_logical_name,
             "entities": [entity.to_dict() for entity in self.entities],
