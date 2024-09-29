@@ -18,49 +18,69 @@ pip install datapyrse
 
 ## Usage
 ```py
-import uuid
-from datapyrse import *
-from datapyrse.query import *
+from uuid import UUID
+import sys
+from datapyrse import (
+    ServiceClient,
+    Entity,
+    EntityCollection,
+    EntityReference,
+)
+from datapyrse.query import QueryExpression, ColumnSet
+from datapyrse.services import (
+    RetrieveMultipleResponse,
+    RetrieveResponse,
+    CreateResponse,
+    DeleteResponse,
+)
 
 
 service: ServiceClient = ServiceClient(
     tenant_id="YOUR_TENANT_ID",
     resource_url="YOUR_RESOURCE_URL",  # e.g. https://yourorg.crm.dynamics.com
 )
-if not service.IsReady:
+if not service.is_ready:
     print("Service not ready")
-    exit(1)
+    sys.exit(1)
 
 
 # Retrieve multiple entities
 query: QueryExpression = QueryExpression(
     "new_tablename", ColumnSet(["new_name", "ownerid"])
 )
-entities: EntityCollection = service.retrieve_multiple(query)
+rm_response: RetrieveMultipleResponse = service.retrieve_multiple(query)
+entities: EntityCollection = rm_response.entity_collection
 
-for ent in entities.entities:
-    print(f"\nId: {ent.entity_id}")
-    for attribute in ent.attributes:
-        print(f"  {attribute}: {ent.attributes[attribute]}")
-    print()
+if entities.entities:
+    for ent in entities.entities:
+        print(f"\nId: {ent.entity_id}")
+        for attribute in ent.attributes:
+            print(f"  {attribute}: {ent.attributes[attribute]}")
+        print()
 
 # Retrieve a single entity
-entity: Entity = service.retrieve_single("new_tablename", uuid.UUID("YOUR_GUID"))
+r_response: RetrieveResponse = service.retrieve(
+    "new_tablename", UUID("YOUR_GUID"), ColumnSet(["new_name", "ownerid"])
+)
+entity: Entity = r_response.entity
 
 # Create a new entity
 new_entity: Entity = Entity("new_tablename")
 new_entity["new_name"] = "New Entity"
 
-user_id: uuid.UUID = uuid.UUID("USER_GUID")
+user_id: UUID = UUID("USER_GUID")
 new_entity["ownerid"] = EntityReference("systemuser", user_id)
 
-service.create(new_entity)
+c_response: CreateResponse = service.create(new_entity)
+if c_response.entity.entity_id:
+    new_entity_id: UUID = c_response.entity.entity_id
 
 # Delete an entity
-service.delete(entity_name="new_tablename", entity_id=UUID("YOUR GUID"))
-service.delete(entity_name="new_tablename", entity_id="YOUR GUID AS STRING")
-service.delete(Entity("new_tablename", UUID("YOUR GUID")))
-service.delete(EntityReference("new_tablename", UUID("YOUR GUID")))
+d_response: DeleteResponse = service.delete(
+    entity_logical_name="new_tablename", entity_id=UUID("YOUR GUID")
+)
+if d_response.was_deleted is True:
+    print("Entity deleted")
 
 
 ```
