@@ -30,6 +30,7 @@ from datapyrse.services.retrieve_multiple import (
     RetrieveMultipleResponse,
     get_retrieve_multiple_request,
 )
+from datapyrse.services.update import UpdateResponse, get_update_request
 from datapyrse.utils.dataverse import DEFAULT_HEADERS
 
 
@@ -452,6 +453,73 @@ class ServiceClient:
         )
 
         return retrieve_response
+
+    def update(
+        self,
+        entity: Entity,
+        logger: Logger = logging.getLogger(__name__),
+        tag: Optional[str] = None,
+        suppress_duplicate_detection: bool = False,
+        bypass_custom_plugin_execution: bool = False,
+        suppress_power_automate_triggers: bool = False,
+    ) -> UpdateResponse:
+        """
+        Updates an entity in Dataverse using the Web API.
+
+        This function allows updating an entity in Dataverse based on the provided entity
+        information. It sends a POST request to the Dataverse Web API to update the entity
+        and returns the response.
+
+        Args:
+            entity (Entity): The entity instance to update.
+            logger (Logger, optional): A logger instance for logging debug, info,
+
+        Returns:
+            UpdateResponse: The response from the update request.
+
+        Raises:
+            ValueError: If entity is not provided.
+
+        Example:
+            >>> from datapyrse import Entity, ServiceClient
+            >>>
+            >>> entity = Entity(entity_logical_name="account",entity_id=UUID('UUID') attributes={"name": "Test Account"})
+            >>> service_client = ServiceClient(tenant_id="...", resource_url="...")
+            >>> update_response = service_client.update(entity=entity)
+        """
+
+        if not entity:
+            msg = "Entity is required"
+            logger.error(msg)
+            raise ValueError(msg)
+
+        if not entity.entity_id or not entity.entity_logical_name:
+            msg = "Entity ID and logical name are required"
+            logger.error(msg)
+            raise ValueError(msg)
+
+        dataverse_request: DataverseRequest = DataverseRequest(
+            base_url=self.resource_url,
+            org_metadata=self.metadata,
+            entity=entity,
+            logger=logger,
+            tag=tag,
+            suppress_duplicate_detection=suppress_duplicate_detection,
+            bypass_custom_plugin_execution=bypass_custom_plugin_execution,
+            suppress_callback_registration_expander_job=suppress_power_automate_triggers,
+        )
+
+        request: Request = get_update_request(
+            dataverse_request=dataverse_request,
+            logger=logger,
+        )
+
+        response: Response = self._execute(request=request)
+        update_response: UpdateResponse = UpdateResponse(
+            response=response, entity=entity, logger=logger
+        )
+
+        return update_response
 
     def delete(
         self,
