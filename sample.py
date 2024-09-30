@@ -7,7 +7,7 @@ from datapyrse import (
     EntityReference,
 )
 from datapyrse.query import QueryExpression, ColumnSet
-from datapyrse.services import (
+from datapyrse.messages import (
     RetrieveMultipleResponse,
     RetrieveResponse,
     CreateResponse,
@@ -29,7 +29,7 @@ query: QueryExpression = QueryExpression(
     "new_tablename", ColumnSet(["new_name", "ownerid"])
 )
 rm_response: RetrieveMultipleResponse = service.retrieve_multiple(query)
-entities: EntityCollection = rm_response.entity_collection
+entities: EntityCollection = rm_response.entities
 
 if entities.entities:
     for ent in entities.entities:
