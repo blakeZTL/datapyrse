@@ -8,12 +8,12 @@ from typing import List, Optional
 
 from requests import Request, Response
 
-from datapyrse.models.column_set import ColumnSet
-from datapyrse.models.entity import Entity
-from datapyrse.models.entity_metadata import EntityMetadata
-from datapyrse.models.methods import Method
-from datapyrse.services.dataverse_request import DataverseRequest
-from datapyrse.utils.dataverse import (
+from datapyrse.query._column_set import ColumnSet
+from datapyrse._entity import Entity
+from datapyrse._entity_metadata import EntityMetadata
+from datapyrse.messages._methods import Method
+from datapyrse.messages._dataverse_request import DataverseRequest
+from datapyrse.utils._dataverse import (
     transform_column_set,
 )
 

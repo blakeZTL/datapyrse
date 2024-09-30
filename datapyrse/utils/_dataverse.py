@@ -7,11 +7,11 @@ from logging import Logger
 from typing import Any, List
 
 
-from datapyrse.models.entity_metadata import EntityMetadata, OrgMetadata
-from datapyrse.models.column_set import ColumnSet
-from datapyrse.models.entity import Entity
-from datapyrse.models.entity_reference import EntityReference
-from datapyrse.models.option_set import OptionSet
+from datapyrse._entity_metadata import EntityMetadata, OrgMetadata
+from datapyrse.query._column_set import ColumnSet
+from datapyrse._entity import Entity
+from datapyrse._entity_reference import EntityReference
+from datapyrse.query._option_set import OptionSet
 
 DEFAULT_HEADERS: dict[str, str] = {
     "OData-MaxVersion": "4.0",
@@ -100,7 +100,7 @@ def transform_column_set(
         raise ValueError("Entity metadata is required")
     if not entity_metadata.attributes:
         raise ValueError("Entity metadata attributes not found")
-    if not column_set:
+    if not column_set or not isinstance(column_set.columns, list):
         raise ValueError("Column set is required")
     if not column_set.columns:
         raise ValueError("Column set columns not found")

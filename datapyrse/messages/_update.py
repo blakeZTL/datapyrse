@@ -3,15 +3,15 @@ from logging import Logger, getLogger
 
 from requests import Request, Response
 
-from datapyrse.models.entity import Entity
-from datapyrse.models.methods import Method
-from datapyrse.services.dataverse_request import DataverseRequest
-from datapyrse.utils.dataverse import parse_entity_to_web_api_body
+from datapyrse._entity import Entity
+from datapyrse.messages._methods import Method
+from datapyrse.messages._dataverse_request import DataverseRequest
+from datapyrse.utils._dataverse import parse_entity_to_web_api_body
 
 
 def get_update_request(
     dataverse_request: DataverseRequest, logger: Logger = getLogger(__name__)
-):
+) -> Request:
     """
     Prepare an update request for Dataverse
 

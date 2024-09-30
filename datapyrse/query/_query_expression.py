@@ -4,11 +4,11 @@ from dataclasses import dataclass, field
 from typing import Optional
 import xml.etree.ElementTree as ET
 
-from datapyrse.models.condition_expression import ConditionOperator
-from datapyrse.models.filter_expression import FilterExpression
-from datapyrse.models.link_entity import LinkEntity
-from datapyrse.models.order_expression import OrderExpression
-from datapyrse.models.column_set import ColumnSet
+from datapyrse.query._condition_expression import ConditionOperator
+from datapyrse.query._filter_expression import FilterExpression
+from datapyrse.query._link_entity import LinkEntity
+from datapyrse.query._order_expression import OrderExpression
+from datapyrse.query._column_set import ColumnSet
 
 
 @dataclass
@@ -41,6 +41,7 @@ class QueryExpression:
     link_entities: Optional[list[LinkEntity]] = field(default_factory=list)
     top_count: Optional[int] = None
     distinct: bool = False
+    fetch_xml: str = field(init=False)
 
     def __post_init__(self) -> None:
         if not self.entity_name:

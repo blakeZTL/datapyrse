@@ -3,6 +3,7 @@ A module for creating entity references in Dataverse
 """
 
 from dataclasses import dataclass
+from typing import Optional
 from uuid import UUID
 
 
@@ -25,8 +26,8 @@ class EntityReference:
     """
 
     entity_logical_name: str
-    entity_id: UUID | None = None
-    name: str | None = None
+    entity_id: Optional[UUID] = None
+    name: Optional[str] = None
 
     def __post_init__(self) -> None:
         if not self.entity_logical_name:

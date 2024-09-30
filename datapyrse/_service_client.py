@@ -17,21 +17,20 @@ import requests
 from requests import Request, Response
 
 
-from datapyrse.models.column_set import ColumnSet
-from datapyrse.models.entity_metadata import OrgMetadata
-from datapyrse.models.query_expression import QueryExpression
-from datapyrse.services.create import CreateResponse
-from datapyrse.models.entity import Entity
-from datapyrse.services.dataverse_request import DataverseRequest
-from datapyrse.services.create import get_create_request
-from datapyrse.services.delete import DeleteResponse, get_delete_request
-from datapyrse.services.retrieve import RetrieveResponse, get_retrieve_request
-from datapyrse.services.retrieve_multiple import (
+from datapyrse.query._column_set import ColumnSet
+from datapyrse._entity_metadata import OrgMetadata
+from datapyrse.query._query_expression import QueryExpression
+from datapyrse.messages._create import CreateResponse, get_create_request
+from datapyrse._entity import Entity
+from datapyrse.messages._dataverse_request import DataverseRequest
+from datapyrse.messages._delete import DeleteResponse, get_delete_request
+from datapyrse.messages._retrieve import RetrieveResponse, get_retrieve_request
+from datapyrse.messages._retrieve_multiple import (
     RetrieveMultipleResponse,
     get_retrieve_multiple_request,
 )
-from datapyrse.services.update import UpdateResponse, get_update_request
-from datapyrse.utils.dataverse import DEFAULT_HEADERS
+from datapyrse.messages._update import UpdateResponse, get_update_request
+from datapyrse.utils._dataverse import DEFAULT_HEADERS
 
 
 class Prompt(StrEnum):
@@ -293,7 +292,7 @@ class ServiceClient:
         entity_logical_name: str,
         entity_id: UUID | str,
         column_set: ColumnSet,
-        logger: Logger = logging.getLogger(__name__),
+        logger: Optional[Logger] = None,
     ) -> RetrieveResponse:
         """
         Retrieves an entity from Dataverse by its logical name and ID.
@@ -331,6 +330,8 @@ class ServiceClient:
             ...     column_set=ColumnSet(["name", "ownerid"])
             ... )
         """
+        if not logger:
+            logger = self.logger
 
         if not entity_logical_name:
             msg = "Entity logical name is required"
@@ -378,7 +379,7 @@ class ServiceClient:
         return retrieve_response
 
     def retrieve_multiple(
-        self, query: QueryExpression, logger: Logger = logging.getLogger(__name__)
+        self, query: QueryExpression, logger: Optional[Logger] = None
     ) -> RetrieveMultipleResponse:
         """
         Retrieves multiple entities from Dataverse using a query expression.
@@ -422,6 +423,8 @@ class ServiceClient:
             >>> service_client = ServiceClient(tenant_id="...", resource_url="...")
             >>> retrieve_multiple_response = service_client.retrieve_multiple(query=query)
         """
+        if not logger:
+            logger = self.logger
 
         if not query:
             msg = "Query is required"

@@ -6,8 +6,8 @@ import logging
 
 from requests import Request, Response
 
-from datapyrse.models.methods import Method
-from datapyrse.services.dataverse_request import DataverseRequest
+from datapyrse.messages._methods import Method
+from datapyrse.messages._dataverse_request import DataverseRequest
 
 
 def get_delete_request(

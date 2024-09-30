@@ -6,10 +6,10 @@ import logging
 from logging import Logger
 from uuid import UUID
 from dataclasses import dataclass, field
-from typing import Dict, Any, List
+from typing import  Any, List, Optional
 
-from datapyrse.models.entity_reference import EntityReference
-from datapyrse.models.option_set import OptionSet
+from datapyrse._entity_reference import EntityReference
+from datapyrse.query._option_set import OptionSet
 
 
 @dataclass
@@ -32,8 +32,8 @@ class Entity:
     """
 
     entity_logical_name: str
-    entity_id: UUID | None = None
-    attributes: Dict[str, Any] = field(default_factory=dict)
+    entity_id: Optional[UUID] = None
+    attributes: dict[str, Any] = field(default_factory=dict)
     logger: Logger = logging.getLogger(__name__)
 
     def __post_init__(self) -> None:
@@ -91,7 +91,7 @@ class Entity:
         }
         return {**base_dict, **self.attributes}
 
-    def _parse_attributes(self, attributes: List[str]) -> Dict[str, Any]:
+    def _parse_attributes(self, attributes: List[str]) -> dict[str, Any]:
         """
         Parses the attributes of the entity, converting special fields (like lookups
         and option sets) into appropriate data structures such as EntityReference

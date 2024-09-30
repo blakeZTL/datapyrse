@@ -7,8 +7,8 @@ from typing import List, Optional
 from enum import StrEnum
 
 
-from datapyrse.models.column_set import ColumnSet
-from datapyrse.models.filter_expression import FilterExpression
+from datapyrse.query._column_set import ColumnSet
+from datapyrse.query._filter_expression import FilterExpression
 
 
 class JoinOperator(StrEnum):

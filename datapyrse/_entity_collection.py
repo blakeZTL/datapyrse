@@ -5,7 +5,7 @@ A module for creating entity collections in Dataverse
 from dataclasses import dataclass, field
 from typing import Optional, Union
 
-from datapyrse.models.entity import Entity
+from datapyrse._entity import Entity
 
 
 @dataclass
@@ -20,8 +20,6 @@ class EntityCollection:
     def __post_init__(self) -> None:
         if not self.entities:
             self.entities = []
-        if not self.entity_logical_name:
-            raise ValueError("Entity logical name is required")
 
     def add_entity(self, entity: Entity) -> None:
         """Add an entity to the collection."""
@@ -50,9 +48,7 @@ class EntityCollection:
         """Convert EntityCollection instance to a dictionary."""
         if not self.entities:
             self.entities = []
-        if not self.entity_logical_name:
-            raise ValueError("Entity logical name is required")
         return {
-            "logical_name": self.entity_logical_name,
+            "logical_name": self.entity_logical_name or "",
             "entities": [entity.to_dict() for entity in self.entities],
         }

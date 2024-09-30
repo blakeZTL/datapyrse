@@ -6,9 +6,9 @@ from dataclasses import dataclass, field
 from logging import Logger, getLogger
 from typing import Optional
 
-from datapyrse.models.entity import Entity
-from datapyrse.models.entity_metadata import OrgMetadata
-from datapyrse.utils.dataverse import (
+from datapyrse._entity import Entity
+from datapyrse._entity_metadata import OrgMetadata
+from datapyrse.utils._dataverse import (
     get_entity_collection_name_by_logical_name,
     DEFAULT_HEADERS,
 )
@@ -38,6 +38,8 @@ class DataverseRequest:
     bypass_custom_plugin_execution: bool = False
     suppress_callback_registration_expander_job: bool = False
     logger: Logger = field(default_factory=lambda: getLogger(__name__))
+    endpoint: str = field(init=False)
+    headers: dict[str, str] = field(init=False)
 
     def __post_init__(self):
         if not self.base_url:

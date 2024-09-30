@@ -5,3 +5,4 @@ venv
 *.ipynb
 *.egg-info
 dist
+build

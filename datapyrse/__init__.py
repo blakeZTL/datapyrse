@@ -1,10 +1,11 @@
-from datapyrse.services.service_client import ServiceClient
-from datapyrse.models.entity import Entity
-from datapyrse.models.entity_collection import EntityCollection
-from datapyrse.models.entity_reference import EntityReference
+from datapyrse._service_client import ServiceClient, Prompt
+from datapyrse._entity import Entity
+from datapyrse._entity_collection import EntityCollection
+from datapyrse._entity_reference import EntityReference
 
 __all__ = [
     "ServiceClient",
+    "Prompt",
     "Entity",
     "EntityCollection",
     "EntityReference",

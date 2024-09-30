@@ -7,11 +7,11 @@ from logging import Logger, getLogger
 
 from requests import Request, Response
 
-from datapyrse.models.entity import Entity
-from datapyrse.models.entity_collection import EntityCollection
-from datapyrse.models.methods import Method
-from datapyrse.models.query_expression import QueryExpression
-from datapyrse.services.dataverse_request import DataverseRequest
+from datapyrse._entity import Entity
+from datapyrse._entity_collection import EntityCollection
+from datapyrse.messages._methods import Method
+from datapyrse.query._query_expression import QueryExpression
+from datapyrse.messages._dataverse_request import DataverseRequest
 
 
 def get_retrieve_multiple_request(
@@ -68,6 +68,9 @@ class RetrieveMultipleResponse:
     Args:
         response (Response): Response object from the retrieve multiple request
         entity_logical_name (str): Logical name of the entity
+        entities (EntityCollection): EntityCollection object to populate with entities
+            - Populated with an empty list of entities by default
+            - Entities are added to the collection during parsing
         logger (Logger): Logger object for logging
 
     Raises:
@@ -76,9 +79,13 @@ class RetrieveMultipleResponse:
 
     response: Response
     entity_logical_name: str
+    entities: EntityCollection = field(default_factory=EntityCollection, init=False)
     logger: Logger = field(default_factory=lambda: getLogger(__name__))
 
     def __post_init__(self):
+        self.logger.debug(
+            f"Initializing RetrieveMultipleResponse for {self.entity_logical_name}"
+        )
         if not self.response:
             msg = "Response required and must be an instance of requests.Response"
             self.logger.error(msg)
@@ -87,21 +94,28 @@ class RetrieveMultipleResponse:
             msg = "entity_logical_name required and must be a string"
             self.logger.error(msg)
             raise ValueError(msg)
-        self.entity_collection: EntityCollection = EntityCollection(
-            entity_logical_name=self.entity_logical_name
-        )
+        self.entities.entity_logical_name = self.entity_logical_name
+        self.logger.debug("EntityCollection initialized")
         self._parse_response()
 
     def _parse_response(self) -> None:
+        self.logger.debug("Parsing response")
         self.response.raise_for_status()
-        if not self.response.json().get("value") or not isinstance(
-            self.response.json().get("value"), list
+        response_json = self.response.json()
+        if not response_json.get("value") or not isinstance(
+            response_json.get("value"), list
         ):
+            self.logger.debug("No entities found in response")
             return
-        for entity_data in self.response.json().get("value"):
+        for entity_data in response_json.get("value"):
+            self.logger.debug(f"Parsing entity data: {entity_data}")
             entity: Entity = Entity(
                 entity_logical_name=self.entity_logical_name,
                 attributes=entity_data,
                 logger=self.logger,
             )
-            self.entity_collection.add_entity(entity)
+            self.entities.add_entity(entity)
+        self.logger.debug(
+            "Entity collection (%s) parsed successfully",
+            len(self.entities.entities or []),
+        )
