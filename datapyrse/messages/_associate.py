@@ -1,8 +1,8 @@
 """A module for associating records in Dataverse"""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from logging import Logger, getLogger
-from typing import Optional
+from typing import Optional, Union
 
 from requests import Request
 
@@ -60,12 +60,29 @@ def get_associate_request(
         logger.error(msg)
         raise ValueError(msg)
 
-    for related_record in associate_request.related_records:
+    if associate_request.relationship_type and (
+        isinstance(
+            associate_request.relationship_type,
+            (ManyToManyRelationshipMetadata, ManyToOneRelationshipMetadata),
+        )
+    ):
+        for related_record in associate_request.related_records:
+            json_data["@odata.id"] = (
+                dataverse_request.base_url
+                + "/api/data/v9.2/"
+                + related_record_collection_name
+                + f"({str(related_record.entity_id)})"
+            )
+    else:
+        if len(associate_request.related_records) > 1:
+            msg = "Cannot associate multiple records with a one-to-many relationship"
+            logger.error(msg)
+            raise ValueError(msg)
         json_data["@odata.id"] = (
             dataverse_request.base_url
             + "/api/data/v9.2/"
             + related_record_collection_name
-            + f"({str(related_record.entity_id)})"
+            + f"({str(associate_request.related_records[0].entity_id)})"
         )
     logger.debug("Related record: %s", json_data)
     url = (
@@ -104,6 +121,13 @@ class AssociateRequest:
     related_records: list[EntityReference]
     org_metadata: OrgMetadata
     relationship_name: Optional[str] = None
+    relationship_type: Optional[
+        Union[
+            OneToManyRelationshipMetadata,
+            ManyToManyRelationshipMetadata,
+            ManyToOneRelationshipMetadata,
+        ]
+    ] = field(init=False)
 
     def __post_init__(self) -> None:
         if not self.primary_record:
@@ -120,16 +144,32 @@ class AssociateRequest:
         if not self.org_metadata:
             raise ValueError("Organization metadata is required")
         if not self.relationship_name:
-            self.relationship_name = self._parse_relationship_name()
+            self.relationship_name, relationship_type = self._parse_relationship_name()
             if not self.relationship_name:
                 raise ValueError(
                     "Could not determine relationship name, one must be provided"
                 )
+            if not relationship_type:
+                raise ValueError(
+                    "Could not determine relationship type, one must be provided"
+                )
+            self.relationship_type = relationship_type
 
-    def _parse_relationship_name(self) -> Optional[str]:
+    def _parse_relationship_name(
+        self,
+    ) -> tuple[
+        Optional[str],
+        Optional[
+            Union[
+                OneToManyRelationshipMetadata,
+                ManyToManyRelationshipMetadata,
+                ManyToOneRelationshipMetadata,
+            ]
+        ],
+    ]:
         if not self.org_metadata.entities:
             raise ValueError("No entities found in organization metadata")
-        possible_one_to_many: list[OneToManyRelationshipMetadata] = []
+
         entity_metadata: EntityMetadata | None = next(
             (
                 entity
@@ -139,7 +179,8 @@ class AssociateRequest:
             None,
         )
         if not entity_metadata:
-            return None
+            return None, None
+        possible_one_to_many: list[OneToManyRelationshipMetadata] = []
         if entity_metadata.one_to_many_relationships:
             for relationship in entity_metadata.one_to_many_relationships:
                 if (
@@ -150,7 +191,7 @@ class AssociateRequest:
                 ):
                     possible_one_to_many.append(relationship)
         if len(possible_one_to_many) > 1:
-            return None
+            return None, None
         possible_many_to_one: list[ManyToOneRelationshipMetadata] = []
         if entity_metadata.many_to_one_relationships:
             for relationship in entity_metadata.many_to_one_relationships:
@@ -162,7 +203,7 @@ class AssociateRequest:
                 ):
                     possible_many_to_one.append(relationship)
         if len(possible_many_to_one) > 1:
-            return None
+            return None, None
         possible_many_to_many: list[ManyToManyRelationshipMetadata] = []
         if entity_metadata.many_to_many_relationships:
 
@@ -175,23 +216,23 @@ class AssociateRequest:
                 ):
                     possible_many_to_many.append(relationship)
         if len(possible_many_to_many) > 1:
-            return None
+            return None, None
         if (
             possible_one_to_many
             and not possible_many_to_one
             and not possible_many_to_many
         ):
-            return possible_one_to_many[0].schema_name
+            return possible_one_to_many[0].schema_name, possible_one_to_many[0]
         if (
             possible_many_to_one
             and not possible_one_to_many
             and not possible_many_to_many
         ):
-            return possible_many_to_one[0].schema_name
+            return possible_many_to_one[0].schema_name, possible_many_to_one[0]
         if (
             possible_many_to_many
             and not possible_one_to_many
             and not possible_many_to_one
         ):
-            return possible_many_to_many[0].schema_name
-        return None
+            return possible_many_to_many[0].schema_name, possible_many_to_many[0]
+        return None, None
