@@ -37,11 +37,8 @@ class OrderExpression:
     """
 
     attribute_name: str
-    order_type: OrderType
+    order_type: OrderType = OrderType.ASC
 
     def __post_init__(self) -> None:
         if not self.attribute_name:
             raise ValueError("Attribute name is required")
-
-        if not self.order_type:
-            raise ValueError("Order type is required")
