@@ -7,6 +7,186 @@ from typing import Any, List, Optional
 
 
 @dataclass
+class ManyToManyRelationshipMetadata:
+    """
+    Represents a many-to-many relationship in Dataverse.
+
+    This class encapsulates the core structure and behavior of a many-to-many
+    relationship in Dataverse, including the intersect attribute, intersect entity,
+    entity 1 intersect attribute, entity 1 logical name, entity 1 navigation property name,
+    entity 2 intersect attribute, entity 2 logical name, entity 2 navigation property name,
+    schema name, and intersect entity name.
+
+    Attributes:
+        intersect_attribute (str): The intersect attribute in the relationship.
+        intersect_entity (str): The intersect entity in the relationship.
+        entity_1_intersect_attribute (str): The intersect attribute of entity 1.
+        entity_1_logical_name (str): The logical name of entity 1.
+        entity_1_navigation_property_name (str): The navigation property name of entity 1.
+        entity_2_intersect_attribute (str): The intersect attribute of entity 2.
+        entity_2_logical_name (str): The logical name of entity 2.
+        entity_2_navigation_property_name (str): The navigation property name of entity 2.
+        schema_name (str): The schema name of the relationship.
+        intersect_entity_name (str): The name of the intersect entity.
+
+    Methods:
+        from_json(json: dict[str, Any]) -> ManyToManyRelationship: Create a
+            ManyToManyRelationship instance from a JSON object.
+    """
+
+    entity_1_intersect_attribute: str
+    entity_1_logical_name: str
+    entity_1_navigation_property_name: str
+    entity_2_intersect_attribute: str
+    entity_2_logical_name: str
+    entity_2_navigation_property_name: str
+    schema_name: str
+    intersect_entity_name: str
+
+    @staticmethod
+    def from_json(json: dict[str, Any]) -> "ManyToManyRelationshipMetadata":
+        """
+        Create a ManyToManyRelationship instance from a JSON object.
+
+        Args:
+            json (dict[str, Any]): A JSON object representing a many-to-many relationship.
+
+        Returns:
+            ManyToManyRelationship: A ManyToManyRelationship instance created from the JSON object.
+        """
+        return ManyToManyRelationshipMetadata(
+            entity_1_intersect_attribute=json["Entity1IntersectAttribute"],
+            entity_1_logical_name=json["Entity1LogicalName"],
+            entity_1_navigation_property_name=json["Entity1NavigationPropertyName"],
+            entity_2_intersect_attribute=json["Entity2IntersectAttribute"],
+            entity_2_logical_name=json["Entity2LogicalName"],
+            entity_2_navigation_property_name=json["Entity2NavigationPropertyName"],
+            schema_name=json["SchemaName"],
+            intersect_entity_name=json["IntersectEntityName"],
+        )
+
+
+@dataclass
+class ManyToOneRelationshipMetadata:
+    """
+    Represents a many-to-one relationship in Dataverse.
+
+    This class encapsulates the core structure and behavior of a many-to-one
+    relationship in Dataverse, including the referenced attribute, referenced
+    entity, referenced entity navigation property name, referencing attribute,
+    referencing entity, referencing entity navigation property name, and schema name.
+
+    Attributes:
+        referenced_attribute (str): The referenced attribute in the relationship.
+        referenced_entity (str): The referenced entity in the relationship.
+        referenced_entity_navigation_property_name (str): The navigation property name
+            of the referenced entity.
+        referencing_attribute (str): The referencing attribute in the relationship.
+        referencing_entity (str): The referencing entity in the relationship.
+        referencing_entity_navigation_property_name (str): The navigation property name
+            of the referencing entity.
+        schema_name (str): The schema name of the relationship.
+
+    Methods:
+        from_json(json: dict[str, Any]) -> ManyToOneRelationship: Create a
+            ManyToOneRelationship instance from a JSON object.
+    """
+
+    referenced_attribute: str
+    referenced_entity: str
+    referenced_entity_navigation_property_name: str
+    referencing_attribute: str
+    referencing_entity: str
+    referencing_entity_navigation_property_name: str
+    schema_name: str
+
+    @staticmethod
+    def from_json(json: dict[str, Any]) -> "ManyToOneRelationshipMetadata":
+        """
+        Create a ManyToOneRelationship instance from a JSON object.
+
+        Args:
+            json (dict[str, Any]): A JSON object representing a many-to-one relationship.
+
+        Returns:
+            ManyToOneRelationship: A ManyToOneRelationship instance created from the JSON object.
+        """
+        return ManyToOneRelationshipMetadata(
+            referenced_attribute=json["ReferencedAttribute"],
+            referenced_entity=json["ReferencedEntity"],
+            referenced_entity_navigation_property_name=json[
+                "ReferencedEntityNavigationPropertyName"
+            ],
+            referencing_attribute=json["ReferencingAttribute"],
+            referencing_entity=json["ReferencingEntity"],
+            referencing_entity_navigation_property_name=json[
+                "ReferencingEntityNavigationPropertyName"
+            ],
+            schema_name=json["SchemaName"],
+        )
+
+
+@dataclass
+class OneToManyRelationshipMetadata:
+    """
+    Represents a one-to-many relationship in Dataverse.
+
+    This class encapsulates the core structure and behavior of a one-to-many
+    relationship in Dataverse, including the referenced attribute, referenced
+    entity, referenced entity navigation property name, referencing attribute,
+    referencing entity, referencing entity navigation property name, and schema name.
+
+    Attributes:
+        referenced_attribute (str): The referenced attribute in the relationship.
+        referenced_entity (str): The referenced entity in the relationship.
+        referenced_entity_navigation_property_name (str): The navigation property name
+            of the referenced entity.
+        referencing_attribute (str): The referencing attribute in the relationship.
+        referencing_entity (str): The referencing entity in the relationship.
+        referencing_entity_navigation_property_name (str): The navigation property name
+            of the referencing entity.
+        schema_name (str): The schema name of the relationship.
+
+    Methods:
+        from_json(json: dict[str, Any]) -> OneToManyRelationship: Create a
+            OneToManyRelationship instance from a JSON object.
+    """
+
+    referenced_attribute: str
+    referenced_entity: str
+    referenced_entity_navigation_property_name: str
+    referencing_attribute: str
+    referencing_entity: str
+    referencing_entity_navigation_property_name: str
+    schema_name: str
+
+    @staticmethod
+    def from_json(json: dict[str, Any]) -> "OneToManyRelationshipMetadata":
+        """
+        Create a OneToManyRelationship instance from a JSON object.
+
+        Args:
+            json (dict[str, Any]): A JSON object representing a one-to-many relationship.
+
+        Returns:
+            OneToManyRelationship: A OneToManyRelationship instance created from the JSON object.
+        """
+        return OneToManyRelationshipMetadata(
+            referenced_attribute=json["ReferencedAttribute"],
+            referenced_entity=json["ReferencedEntity"],
+            referenced_entity_navigation_property_name=json[
+                "ReferencedEntityNavigationPropertyName"
+            ],
+            referencing_attribute=json["ReferencingAttribute"],
+            referencing_entity=json["ReferencingEntity"],
+            referencing_entity_navigation_property_name=json[
+                "ReferencingEntityNavigationPropertyName"
+            ],
+            schema_name=json["SchemaName"],
+        )
+
+
+@dataclass
 class AttributeMetadata:
     """
     Represents an attribute metadata object in Dataverse.
@@ -122,6 +302,9 @@ class EntityMetadata:
     schema_name: str | None = None
     primary_id_attribute: str | None = None
     primary_name_attribute: str | None = None
+    one_to_many_relationships: List[OneToManyRelationshipMetadata] | None = None
+    many_to_one_relationships: List[ManyToOneRelationshipMetadata] | None = None
+    many_to_many_relationships: List[ManyToManyRelationshipMetadata] | None = None
 
     @staticmethod
     def from_json(json: dict[str, Any]) -> "EntityMetadata":
@@ -143,6 +326,18 @@ class EntityMetadata:
             schema_name=json["SchemaName"],
             primary_id_attribute=json["PrimaryIdAttribute"],
             primary_name_attribute=json["PrimaryNameAttribute"],
+            one_to_many_relationships=[
+                OneToManyRelationshipMetadata.from_json(rel)
+                for rel in json["OneToManyRelationships"]
+            ],
+            many_to_one_relationships=[
+                ManyToOneRelationshipMetadata.from_json(rel)
+                for rel in json["ManyToOneRelationships"]
+            ],
+            many_to_many_relationships=[
+                ManyToManyRelationshipMetadata.from_json(rel)
+                for rel in json["ManyToManyRelationships"]
+            ],
         )
 
 
