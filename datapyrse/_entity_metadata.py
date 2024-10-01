@@ -317,7 +317,7 @@ class EntityMetadata:
         Returns:
             EntityMetadata: An EntityMetadata instance created from the JSON object.
         """
-        return EntityMetadata(
+        entity_metadata: EntityMetadata = EntityMetadata(
             attributes=[
                 AttributeMetadata.from_json(attr) for attr in json["Attributes"]
             ],
@@ -326,19 +326,24 @@ class EntityMetadata:
             schema_name=json["SchemaName"],
             primary_id_attribute=json["PrimaryIdAttribute"],
             primary_name_attribute=json["PrimaryNameAttribute"],
-            one_to_many_relationships=[
+        )
+        if "OneToManyRelationships" in json:
+            entity_metadata.one_to_many_relationships = [
                 OneToManyRelationshipMetadata.from_json(rel)
                 for rel in json["OneToManyRelationships"]
-            ],
-            many_to_one_relationships=[
+            ]
+        if "ManyToOneRelationships" in json:
+            entity_metadata.many_to_one_relationships = [
                 ManyToOneRelationshipMetadata.from_json(rel)
                 for rel in json["ManyToOneRelationships"]
-            ],
-            many_to_many_relationships=[
+            ]
+        if "ManyToManyRelationships" in json:
+            entity_metadata.many_to_many_relationships = [
                 ManyToManyRelationshipMetadata.from_json(rel)
                 for rel in json["ManyToManyRelationships"]
-            ],
-        )
+            ]
+
+        return entity_metadata
 
 
 @dataclass
@@ -351,6 +356,7 @@ class OrgMetadata:
 
     Attributes:
         entities (List[EntityMetadata]): A list of entity metadata objects.
+        contains_relationships (bool): Whether the organization's entity metadata contains relationships
 
     Methods:
         from_json(json: dict[str, Any]) -> OrgMetadata: Create an OrgMetadata instance
@@ -358,6 +364,7 @@ class OrgMetadata:
     """
 
     entities: List[EntityMetadata] | None = None
+    contains_relationships: bool = False
 
     @staticmethod
     def from_json(json: dict[str, Any]) -> "OrgMetadata":

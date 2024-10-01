@@ -97,6 +97,7 @@ class ServiceClient:
         client_id: str = "51f81489-12ee-4a9e-aaae-a2591f45987d",
         scope: Optional[List[str]] = None,
         prompt: Prompt = Prompt.NONE,
+        pre_fetch_relationship_metadata: bool = False,
         logger: Logger = logging.getLogger(__name__),
     ) -> None:
         self.client_id = client_id
@@ -111,6 +112,7 @@ class ServiceClient:
         self._access_token: str | None = None
         self.token_expiry: float | None = None
         self.is_ready = False
+        self.fetch_relationship_metadata = pre_fetch_relationship_metadata
         self.logger = logger
         if not self.logger.handlers:
             console_handler = logging.StreamHandler()
@@ -126,7 +128,9 @@ class ServiceClient:
 
     def __post_init__(self):
         self._acquire_token()
-        self.metadata = self._get_metadata()
+        self.metadata = self._get_metadata(
+            get_relationships=self.fetch_relationship_metadata
+        )
         if self._access_token and self.token_expiry and time.time() > self.token_expiry:
             self.is_ready = True
         if not self.metadata:
@@ -143,15 +147,20 @@ class ServiceClient:
             + f"token_expiry={self.token_expiry})"
         )
 
-    def _get_metadata(self) -> OrgMetadata:
+    def _get_metadata(self, get_relationships: bool = False) -> OrgMetadata:
         self.logger.debug("Getting metadata")
 
         endpoint: str = (
             "api/data/v9.2/EntityDefinitions?"
-            + "$expand=OneToManyRelationships,ManyToOneRelationships,ManyToManyRelationships,"
+            + "$expand="
             + "Attributes($select="
             + "LogicalName,AttributeType,SchemaName)"
         )
+        if get_relationships:
+            self.fetch_relationship_metadata = True
+            endpoint += (
+                ",OneToManyRelationships,ManyToOneRelationships,ManyToManyRelationships"
+            )
 
         headers: dict[str, str] = DEFAULT_HEADERS
         headers["Authorization"] = f"Bearer {self._get_access_token()}"
@@ -169,6 +178,7 @@ class ServiceClient:
             self.logger.warning("No entity metadata found")
         else:
             self.logger.debug("Metadata fetched: %s", len(org_metadata.entities))
+        org_metadata.contains_relationships = get_relationships
         return org_metadata
 
     def _acquire_token(self) -> None:
@@ -221,6 +231,16 @@ class ServiceClient:
         if not self._access_token:
             raise ValueError("Failed to get access token")
         return self._access_token
+
+    def refresh_metadata(self) -> OrgMetadata:
+        if not self.fetch_relationship_metadata:
+            self.logger.warning(
+                "Relationship metadata not fetched. Fetching metadata to associate records"
+            )
+            self.metadata = self._get_metadata(get_relationships=True)
+            return self.metadata
+        self.metadata = self._get_metadata()
+        return self.metadata
 
     def create(
         self,
@@ -607,6 +627,33 @@ class ServiceClient:
             msg = "Associate request is required"
             logger.error(msg)
             raise ValueError(msg)
+        if not associate_request.logger:
+            associate_request.logger = logger
+        if not self.metadata.contains_relationships:
+            logger.warning(
+                "Relationship metadata not fetched. Fetching metadata to associate records"
+            )
+            new_metadata: OrgMetadata = self._get_metadata(get_relationships=True)
+            associate_request.org_metadata = new_metadata
+            self.metadata = new_metadata
+        if not associate_request.relationship_name:
+            associate_request.relationship_name, associate_request.relationship_type = (
+                associate_request.parse_relationship_name()
+            )
+            if not associate_request.relationship_name:
+                raise ValueError(
+                    "Could not determine relationship name, one must be provided"
+                )
+            if not associate_request.relationship_type:
+                raise ValueError(
+                    "Could not determine relationship type, one must be provided"
+                )
+        realtionship = associate_request.validate_relationship_name(logger=logger)
+        if not realtionship:
+            raise ValueError(
+                "Relationship name not found in metadata, please provide a valid relationship name"
+            )
+        associate_request.relationship_type = realtionship
         dataverse_request: DataverseRequest = DataverseRequest(
             base_url=self.resource_url,
             org_metadata=self.metadata,
