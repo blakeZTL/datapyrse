@@ -1,3 +1,5 @@
+"""A module for relating records in Dataverse"""
+
 from dataclasses import dataclass, field
 from logging import DEBUG, Logger, getLogger
 from typing import Optional, Union
@@ -61,6 +63,16 @@ class RelateRequest:
             ManyToManyRelationshipMetadata,
         ]
     ]:
+        """
+        Validate the relationship name
+
+        Args:
+            logger (Logger): Logger object for logging
+
+        Returns:
+            Optional[Union[OneToManyRelationshipMetadata, ManyToOneRelationshipMetadata, ManyToManyRelationshipMetadata]]:
+                The relationship metadata if found, otherwise None
+        """
         if not logger:
             logger = self.logger
         logger.setLevel(DEBUG)
@@ -200,6 +212,13 @@ class RelateRequest:
             ]
         ],
     ]:
+        """
+        Parse the relationship name
+
+        Returns:
+            tuple[Optional[str], Optional[Union[OneToManyRelationshipMetadata, ManyToManyRelationshipMetadata, ManyToOneRelationshipMetadata]]]:
+                The relationship schema name and metadata if found, otherwise None
+        """
         self.logger.debug("Parsing relationship name")
         if not self.org_metadata.entities:
             raise ValueError("No entities found in organization metadata")
@@ -235,8 +254,7 @@ class RelateRequest:
                         self.related_records.entity_references[0].entity_logical_name,
                     )
                     possible_one_to_many.append(relationship)
-        if len(possible_one_to_many) > 1:
-            return None, None
+
         possible_many_to_one: list[ManyToOneRelationshipMetadata] = []
         if entity_metadata.many_to_one_relationships:
             self.logger.debug(
@@ -258,8 +276,7 @@ class RelateRequest:
                         self.related_records.entity_references[0].entity_logical_name,
                     )
                     possible_many_to_one.append(relationship)
-        if len(possible_many_to_one) > 1:
-            return None, None
+
         possible_many_to_many: list[ManyToManyRelationshipMetadata] = []
         if entity_metadata.many_to_many_relationships:
             self.logger.debug(
@@ -281,7 +298,11 @@ class RelateRequest:
                         self.related_records.entity_references[0].entity_logical_name,
                     )
                     possible_many_to_many.append(relationship)
-        if len(possible_many_to_many) > 1:
+        if (
+            len(possible_many_to_many) > 1
+            or len(possible_many_to_one) > 1
+            or len(possible_one_to_many) > 1
+        ):
             return None, None
         if (
             possible_one_to_many

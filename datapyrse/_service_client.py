@@ -240,6 +240,17 @@ class ServiceClient:
         return self._access_token
 
     def refresh_metadata(self) -> OrgMetadata:
+        """
+        Refreshes the metadata for the organization.
+
+        This function allows refreshing the metadata for the organization by fetching
+        the entity definitions from Dataverse. It sends a GET request to the Dataverse
+        Web API to retrieve the metadata and updates the metadata attribute.
+
+        Returns:
+            OrgMetadata: The updated organization metadata.
+        """
+        self.logger.debug("Refreshing metadata")
         if not self.fetch_relationship_metadata:
             self.logger.warning(
                 "Relationship metadata not fetched. Fetching metadata to associate records"
