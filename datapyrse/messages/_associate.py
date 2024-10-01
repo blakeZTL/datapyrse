@@ -7,7 +7,6 @@ from typing import Optional, Union
 from requests import Request
 
 from datapyrse._entity_reference import EntityReference
-
 from datapyrse._entity_metadata import (
     EntityMetadata,
     ManyToManyRelationshipMetadata,
@@ -18,6 +17,7 @@ from datapyrse._entity_metadata import (
 from datapyrse.messages._dataverse_request import DataverseRequest
 from datapyrse.messages._methods import Method
 from datapyrse.utils._dataverse import get_entity_collection_name_by_logical_name
+from datapyrse._entity_reference_collection import EntityReferenceCollection
 
 
 @dataclass
@@ -38,7 +38,7 @@ class AssociateRequest:
     """
 
     primary_record: EntityReference
-    related_records: list[EntityReference]
+    related_records: EntityReferenceCollection
     org_metadata: OrgMetadata
     relationship_name: Optional[str] = None
     relationship_type: Optional[
@@ -55,13 +55,6 @@ class AssociateRequest:
             raise ValueError("Primary record is required")
         if not self.related_records:
             raise ValueError("Related records are required")
-        if (
-            len(set([record.entity_logical_name for record in self.related_records]))
-            > 1
-        ):
-            raise ValueError(
-                "Related records must all have the same entity_logical_name"
-            )
         if not self.org_metadata:
             raise ValueError("Organization metadata is required")
 
@@ -95,7 +88,10 @@ class AssociateRequest:
                 for entity in self.org_metadata.entities
                 if entity.logical_name == self.primary_record.entity_logical_name
                 or entity.logical_name
-                in [entity.entity_logical_name for entity in self.related_records]
+                in [
+                    entity.entity_logical_name
+                    for entity in self.related_records.entity_references
+                ]
             ),
             None,
         )
@@ -114,7 +110,7 @@ class AssociateRequest:
                 if relationship.referenced_entity
                 == self.primary_record.entity_logical_name
                 and relationship.referencing_entity
-                == self.related_records[0].entity_logical_name
+                == self.related_records.entity_references[0].entity_logical_name
                 and relationship.schema_name.lower() == self.relationship_name.lower()
             ]
             if one_to_many_relationships and len(one_to_many_relationships) == 1:
@@ -141,7 +137,7 @@ class AssociateRequest:
                 if relationship.referenced_entity
                 == self.primary_record.entity_logical_name
                 and relationship.referencing_entity
-                == self.related_records[0].entity_logical_name
+                == self.related_records.entity_references[0].entity_logical_name
                 and relationship.schema_name.lower() == self.relationship_name.lower()
             ]
             if many_to_one_relationships and len(many_to_one_relationships) == 1:
@@ -151,7 +147,7 @@ class AssociateRequest:
                     many_to_one_relationships[0].referenced_entity,
                     many_to_one_relationships[0].referencing_entity,
                     self.primary_record.entity_logical_name,
-                    self.related_records[0].entity_logical_name,
+                    self.related_records.entity_references[0].entity_logical_name,
                 )
                 return many_to_one_relationships[0]
             if len(many_to_one_relationships) > 1:
@@ -175,7 +171,7 @@ class AssociateRequest:
                 if relationship.entity_1_logical_name
                 == self.primary_record.entity_logical_name
                 and relationship.entity_2_logical_name
-                == self.related_records[0].entity_logical_name
+                == self.related_records.entity_references[0].entity_logical_name
                 and relationship.schema_name.lower() == self.relationship_name.lower()
             ]
             if many_to_many_relationships and len(many_to_many_relationships) == 1:
@@ -236,14 +232,14 @@ class AssociateRequest:
                     relationship.referenced_entity
                     == self.primary_record.entity_logical_name
                     and relationship.referencing_entity
-                    == self.related_records[0].entity_logical_name
+                    == self.related_records.entity_references[0].entity_logical_name
                 ):
                     self.logger.debug(
                         "Relationship: %s, %s, %s, %s",
                         relationship.referenced_entity,
                         self.primary_record.entity_logical_name,
                         relationship.referencing_entity,
-                        self.related_records[0].entity_logical_name,
+                        self.related_records.entity_references[0].entity_logical_name,
                     )
                     possible_one_to_many.append(relationship)
         if len(possible_one_to_many) > 1:
@@ -259,14 +255,14 @@ class AssociateRequest:
                     relationship.referenced_entity
                     == self.primary_record.entity_logical_name
                     and relationship.referencing_entity
-                    == self.related_records[0].entity_logical_name
+                    == self.related_records.entity_references[0].entity_logical_name
                 ):
                     self.logger.debug(
                         "Relationship: %s, %s, %s, %s",
                         relationship.referenced_entity,
                         self.primary_record.entity_logical_name,
                         relationship.referencing_entity,
-                        self.related_records[0].entity_logical_name,
+                        self.related_records.entity_references[0].entity_logical_name,
                     )
                     possible_many_to_one.append(relationship)
         if len(possible_many_to_one) > 1:
@@ -282,14 +278,14 @@ class AssociateRequest:
                     relationship.entity_1_logical_name
                     == self.primary_record.entity_logical_name
                     and relationship.entity_2_logical_name
-                    == self.related_records[0].entity_logical_name
+                    == self.related_records.entity_references[0].entity_logical_name
                 ):
                     self.logger.debug(
                         "Relationship: %s, %s, %s, %s",
                         relationship.entity_1_logical_name,
                         self.primary_record.entity_logical_name,
                         relationship.entity_2_logical_name,
-                        self.related_records[0].entity_logical_name,
+                        self.related_records.entity_references[0].entity_logical_name,
                     )
                     possible_many_to_many.append(relationship)
         if len(possible_many_to_many) > 1:
@@ -360,7 +356,9 @@ def get_associate_request(
     json_data: dict[str, str] = {}
     related_record_collection_name = get_entity_collection_name_by_logical_name(
         org_metadata=associate_request.org_metadata,
-        logical_name=associate_request.related_records[0].entity_logical_name,
+        logical_name=associate_request.related_records.entity_references[
+            0
+        ].entity_logical_name,
         logger=logger,
     )
     if not related_record_collection_name:
@@ -384,7 +382,7 @@ def get_associate_request(
                 msg = "Primary record must be the referenced entity for a many-to-one relationship"
                 logger.error(msg)
                 raise ValueError(msg)
-        for related_record in associate_request.related_records:
+        for related_record in associate_request.related_records.entity_references:
             json_data["@odata.id"] = (
                 dataverse_request.base_url
                 + "/api/data/v9.2/"
@@ -392,7 +390,7 @@ def get_associate_request(
                 + f"({str(related_record.entity_id)})"
             )
     else:
-        if len(associate_request.related_records) > 1:
+        if len(associate_request.related_records.entity_references) > 1:
             msg = "Cannot associate multiple records with a one-to-many relationship"
             logger.error(msg)
             raise ValueError(msg)
@@ -410,7 +408,7 @@ def get_associate_request(
             dataverse_request.base_url
             + "/api/data/v9.2/"
             + related_record_collection_name
-            + f"({str(associate_request.related_records[0].entity_id)})"
+            + f"({str(associate_request.related_records.entity_references[0].entity_id)})"
         )
     logger.debug("Related record: %s", json_data)
     url = (

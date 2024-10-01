@@ -33,6 +33,10 @@ from datapyrse.messages._retrieve_multiple import (
 from datapyrse.messages._update import UpdateResponse, get_update_request
 from datapyrse.utils._dataverse import DEFAULT_HEADERS
 
+from datapyrse._entity_reference import EntityReference
+
+from datapyrse._entity_reference_collection import EntityReferenceCollection
+
 
 class Prompt(StrEnum):
     """
@@ -618,24 +622,82 @@ class ServiceClient:
 
     def associate(
         self,
-        associate_request: AssociateRequest,
+        target: EntityReference,
+        related_entities: EntityReferenceCollection,
+        relationship_name: Optional[str] = None,
         logger: Optional[Logger] = None,
     ) -> None:
+        """
+        Associates a target entity with related entities in Dataverse.
+
+        This function allows associating a target entity with related entities in Dataverse
+        based on the provided entity references. It sends a POST request to the Dataverse
+        Web API to associate the records and returns the response.
+
+        Args:
+            target (EntityReference): The target entity reference to associate with related
+                entities.
+            related_entities (EntityReferenceCollection): The collection of related entity
+                references to associate with the target entity.
+            relationship_name (str, optional): The name of the relationship between the target
+                and related entities. If not provided, the function will attempt to determine
+                the relationship name from the metadata. Defaults to None.
+            logger (logging.Logger, optional): A logger instance for logging debug, info,
+                and error messages. Defaults to None.
+
+        Returns:
+            None: The function does not return any value.
+
+        Raises:
+            ValueError: If the target entity, entity logical name, or entity ID is missing,
+                if the related entities are not provided, or if the relationship name is not
+                found in the metadata.
+
+        Example:
+            >>> from datapyrse import EntityReference, EntityReferenceCollection, ServiceClient
+            >>>
+            >>> target = EntityReference(entity_logical_name="account", entity_id="...")
+            >>> related_entities = EntityReferenceCollection(
+            ...     entity_logical_name="contact",
+            ...     entity_references=[
+            ...         EntityReference(entity_logical_name="contact", entity_id="..."),
+            ...         EntityReference(entity_logical_name="contact", entity_id="..."),
+            ...     ],
+            ... )
+            >>> service_client = ServiceClient(tenant_id="...", resource_url="...")
+            >>> service_client.associate(target=target, related_entities=related_entities)
+        """
         if not logger:
             logger = self.logger
-        if not associate_request:
-            msg = "Associate request is required"
+        if not target:
+            msg = "Target entity is required"
             logger.error(msg)
             raise ValueError(msg)
-        if not associate_request.logger:
-            associate_request.logger = logger
+        if not target.entity_logical_name:
+            msg = "Target entity logical name is required"
+            logger.error(msg)
+            raise ValueError(msg)
+        if not target.entity_id:
+            msg = "Target entity ID is required"
+            logger.error(msg)
+            raise ValueError(msg)
+        if not related_entities:
+            msg = "Related entities are required"
+            logger.error(msg)
+            raise ValueError(msg)
         if not self.metadata.contains_relationships:
             logger.warning(
                 "Relationship metadata not fetched. Fetching metadata to associate records"
             )
             new_metadata: OrgMetadata = self._get_metadata(get_relationships=True)
-            associate_request.org_metadata = new_metadata
             self.metadata = new_metadata
+        associate_request: AssociateRequest = AssociateRequest(
+            primary_record=target,
+            related_records=related_entities,
+            org_metadata=self.metadata,
+            relationship_name=relationship_name,
+            logger=logger,
+        )
         if not associate_request.relationship_name:
             associate_request.relationship_name, associate_request.relationship_type = (
                 associate_request.parse_relationship_name()
@@ -674,4 +736,3 @@ class ServiceClient:
             logger.error(msg)
             raise ValueError(msg)
         logger.info("Records associated successfully")
-        return None
