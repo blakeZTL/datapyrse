@@ -9,7 +9,7 @@ with open("requirements.txt") as f:
 
 setup(
     name="datapyrse",
-    version="0.7.0",
+    version="0.8.0",
     packages=find_packages(),
     package_data={
         "datapyrse": ["py.typed", "typings/**/*.pyi"],
