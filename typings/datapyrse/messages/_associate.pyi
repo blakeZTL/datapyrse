@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datapyrse._entity_metadata import EntityMetadata as EntityMetadata, ManyToManyRelationshipMetadata as ManyToManyRelationshipMetadata, ManyToOneRelationshipMetadata as ManyToOneRelationshipMetadata, OneToManyRelationshipMetadata as OneToManyRelationshipMetadata, OrgMetadata as OrgMetadata
 from datapyrse._entity_reference import EntityReference as EntityReference
+from datapyrse._entity_reference_collection import EntityReferenceCollection as EntityReferenceCollection
 from datapyrse.messages._dataverse_request import DataverseRequest as DataverseRequest
 from datapyrse.messages._methods import Method as Method
 from datapyrse.utils._dataverse import get_entity_collection_name_by_logical_name as get_entity_collection_name_by_logical_name
@@ -10,7 +11,7 @@ from requests import Request
 @dataclass
 class AssociateRequest:
     primary_record: EntityReference
-    related_records: list[EntityReference]
+    related_records: EntityReferenceCollection
     org_metadata: OrgMetadata
     relationship_name: str | None = ...
     relationship_type: OneToManyRelationshipMetadata | ManyToManyRelationshipMetadata | ManyToOneRelationshipMetadata | None = ...
