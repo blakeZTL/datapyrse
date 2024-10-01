@@ -3,10 +3,12 @@ from datapyrse._entity import Entity as Entity
 from datapyrse._entity_metadata import OrgMetadata as OrgMetadata
 from datapyrse._entity_reference import EntityReference as EntityReference
 from datapyrse._entity_reference_collection import EntityReferenceCollection as EntityReferenceCollection
-from datapyrse.messages._associate import AssociateRequest as AssociateRequest, get_associate_request as get_associate_request
+from datapyrse.messages._associate import get_associate_request as get_associate_request
 from datapyrse.messages._create import CreateResponse as CreateResponse, get_create_request as get_create_request
 from datapyrse.messages._dataverse_request import DataverseRequest as DataverseRequest
 from datapyrse.messages._delete import DeleteResponse as DeleteResponse, get_delete_request as get_delete_request
+from datapyrse.messages._disassociate import get_disassociate_request as get_disassociate_request
+from datapyrse.messages._relate import RelateRequest as RelateRequest
 from datapyrse.messages._retrieve import RetrieveResponse as RetrieveResponse, get_retrieve_request as get_retrieve_request
 from datapyrse.messages._retrieve_multiple import RetrieveMultipleResponse as RetrieveMultipleResponse, get_retrieve_multiple_request as get_retrieve_multiple_request
 from datapyrse.messages._update import UpdateResponse as UpdateResponse, get_update_request as get_update_request
@@ -45,3 +47,4 @@ class ServiceClient:
     def update(self, entity: Entity, logger: Logger = ..., tag: str | None = None, suppress_duplicate_detection: bool = False, bypass_custom_plugin_execution: bool = False, suppress_power_automate_triggers: bool = False) -> UpdateResponse: ...
     def delete(self, entity_logical_name: str, entity_id: UUID | str, logger: Logger = ...) -> DeleteResponse: ...
     def associate(self, target: EntityReference, related_entities: EntityReferenceCollection, relationship_name: str | None = None, logger: Logger | None = None) -> None: ...
+    def disassociate(self, target: EntityReference, related_entities: EntityReferenceCollection, relationship_name: str | None = None, logger: Logger | None = None) -> None: ...
