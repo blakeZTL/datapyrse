@@ -17,7 +17,8 @@ import requests
 from requests import Request, Response
 
 
-from datapyrse.messages._associate import AssociateRequest, get_associate_request
+from datapyrse.messages._associate import get_associate_request
+from datapyrse.messages._disassociate import get_disassociate_request
 from datapyrse.query._column_set import ColumnSet
 from datapyrse._entity_metadata import OrgMetadata
 from datapyrse.query._query_expression import QueryExpression
@@ -36,6 +37,8 @@ from datapyrse.utils._dataverse import DEFAULT_HEADERS
 from datapyrse._entity_reference import EntityReference
 
 from datapyrse._entity_reference_collection import EntityReferenceCollection
+
+from datapyrse.messages._relate import RelateRequest
 
 
 class Prompt(StrEnum):
@@ -620,6 +623,64 @@ class ServiceClient:
         )
         return delete_response
 
+    def _parse_relate(
+        self,
+        target: EntityReference,
+        related_entities: EntityReferenceCollection,
+        relationship_name: Optional[str] = None,
+        logger: Optional[Logger] = None,
+    ) -> RelateRequest:
+        if not logger:
+            logger = self.logger
+        if not target:
+            msg = "Target entity is required"
+            logger.error(msg)
+            raise ValueError(msg)
+        if not target.entity_logical_name:
+            msg = "Target entity logical name is required"
+            logger.error(msg)
+            raise ValueError(msg)
+        if not target.entity_id:
+            msg = "Target entity ID is required"
+            logger.error(msg)
+            raise ValueError(msg)
+        if not related_entities:
+            msg = "Related entities are required"
+            logger.error(msg)
+            raise ValueError(msg)
+        if not self.metadata.contains_relationships:
+            logger.warning(
+                "Relationship metadata not fetched. Fetching metadata to associate records"
+            )
+            new_metadata: OrgMetadata = self._get_metadata(get_relationships=True)
+            self.metadata = new_metadata
+        relate_request: RelateRequest = RelateRequest(
+            primary_record=target,
+            related_records=related_entities,
+            org_metadata=self.metadata,
+            relationship_name=relationship_name,
+            logger=logger,
+        )
+        if not relate_request.relationship_name:
+            relate_request.relationship_name, relate_request.relationship_type = (
+                relate_request.parse_relationship_name()
+            )
+            if not relate_request.relationship_name:
+                raise ValueError(
+                    "Could not determine relationship name, one must be provided"
+                )
+            if not relate_request.relationship_type:
+                raise ValueError(
+                    "Could not determine relationship type, one must be provided"
+                )
+        realtionship = relate_request.validate_relationship_name(logger=logger)
+        if not realtionship:
+            raise ValueError(
+                "Relationship name not found in metadata, please provide a valid relationship name"
+            )
+        relate_request.relationship_type = realtionship
+        return relate_request
+
     def associate(
         self,
         target: EntityReference,
@@ -669,53 +730,12 @@ class ServiceClient:
         """
         if not logger:
             logger = self.logger
-        if not target:
-            msg = "Target entity is required"
-            logger.error(msg)
-            raise ValueError(msg)
-        if not target.entity_logical_name:
-            msg = "Target entity logical name is required"
-            logger.error(msg)
-            raise ValueError(msg)
-        if not target.entity_id:
-            msg = "Target entity ID is required"
-            logger.error(msg)
-            raise ValueError(msg)
-        if not related_entities:
-            msg = "Related entities are required"
-            logger.error(msg)
-            raise ValueError(msg)
-        if not self.metadata.contains_relationships:
-            logger.warning(
-                "Relationship metadata not fetched. Fetching metadata to associate records"
-            )
-            new_metadata: OrgMetadata = self._get_metadata(get_relationships=True)
-            self.metadata = new_metadata
-        associate_request: AssociateRequest = AssociateRequest(
-            primary_record=target,
-            related_records=related_entities,
-            org_metadata=self.metadata,
+        associate_request: RelateRequest = self._parse_relate(
+            target=target,
+            related_entities=related_entities,
             relationship_name=relationship_name,
             logger=logger,
         )
-        if not associate_request.relationship_name:
-            associate_request.relationship_name, associate_request.relationship_type = (
-                associate_request.parse_relationship_name()
-            )
-            if not associate_request.relationship_name:
-                raise ValueError(
-                    "Could not determine relationship name, one must be provided"
-                )
-            if not associate_request.relationship_type:
-                raise ValueError(
-                    "Could not determine relationship type, one must be provided"
-                )
-        realtionship = associate_request.validate_relationship_name(logger=logger)
-        if not realtionship:
-            raise ValueError(
-                "Relationship name not found in metadata, please provide a valid relationship name"
-            )
-        associate_request.relationship_type = realtionship
         dataverse_request: DataverseRequest = DataverseRequest(
             base_url=self.resource_url,
             org_metadata=self.metadata,
@@ -736,3 +756,67 @@ class ServiceClient:
             logger.error(msg)
             raise ValueError(msg)
         logger.info("Records associated successfully")
+
+    def disassociate(
+        self,
+        target: EntityReference,
+        related_entities: EntityReferenceCollection,
+        relationship_name: Optional[str] = None,
+        logger: Optional[Logger] = None,
+    ) -> None:
+        """
+        Disassociates a target entity from related entities in Dataverse.
+
+        This function allows disassociating a target entity from related entities in Dataverse
+        based on the provided entity references. It sends a DELETE request to the Dataverse
+        Web API to disassociate the records and returns the response.
+
+        Args:
+            target (EntityReference): The target entity reference to disassociate from related
+                entities.
+            related_entities (EntityReferenceCollection): The collection of related entity
+                references to disassociate from the target entity.
+            relationship_name (str, optional): The name of the relationship between the target
+                and related entities. If not provided, the function will attempt to determine
+                the relationship name from the metadata. Defaults to None.
+            logger (logging.Logger, optional): A logger instance for logging debug, info,
+                and error messages. Defaults to None.
+
+        Returns:
+            None: The function does not return any value.
+
+        Raises:
+            ValueError: If the target entity, entity logical name, or entity ID is missing,
+                if the related entities are not provided, or if the relationship name is not
+                found in the metadata.
+        """
+
+        if not logger:
+            logger = self.logger
+        disassociate_request: RelateRequest = self._parse_relate(
+            target=target,
+            related_entities=related_entities,
+            relationship_name=relationship_name,
+            logger=logger,
+        )
+        dataverse_request: DataverseRequest = DataverseRequest(
+            base_url=self.resource_url,
+            org_metadata=self.metadata,
+            entity=Entity(
+                entity_logical_name=disassociate_request.primary_record.entity_logical_name,
+                entity_id=disassociate_request.primary_record.entity_id,
+            ),
+            logger=logger,
+        )
+        disassociate_requests: list[Request] = get_disassociate_request(
+            dataverse_request=dataverse_request,
+            disassociate_request=disassociate_request,
+            logger=logger,
+        )
+        for req in disassociate_requests:
+            response: Response = self._execute(request=req)
+            if response.status_code != 204:
+                msg = f"Failed to disassociate records: {response.text}"
+                logger.error(msg)
+                raise ValueError(msg)
+        logger.info("Records disassociated successfully")
