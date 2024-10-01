@@ -25,6 +25,7 @@ from datapyrse import (
     Entity,
     EntityCollection,
     EntityReference,
+    EntityReferenceCollection,
 )
 from datapyrse.query import QueryExpression, ColumnSet
 from datapyrse.messages import (
@@ -82,6 +83,22 @@ d_response: DeleteResponse = service.delete(
 if d_response.was_deleted is True:
     print("Entity deleted")
 
+# Associate
+service.associate(
+    target=EntityReference(
+        entity_logical_name="new_tablename", entity_id=UUID("A_GUID")
+    ),
+    related_entities=EntityReferenceCollection(
+        entity_logical_name="new_anothertablename",
+        entity_references=[
+            EntityReference(
+                entity_logical_name="new_anothertablename",
+                entity_id=UUID("ANOTHER_GUID"),
+            ),
+        ],
+    ),
+    relationship_name="the_relationship_Schema_Name",
+)
 
 ```
 
