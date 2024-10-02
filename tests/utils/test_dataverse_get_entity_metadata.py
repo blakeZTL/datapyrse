@@ -3,8 +3,8 @@ from typing import List
 from unittest import mock
 import pytest
 import requests
-from datapyrse.models.entity_metadata import *
-from datapyrse.utils.dataverse import get_metadata
+from datapyrse._entity_metadata import *
+from datapyrse.utils._dataverse import get_metadata
 
 
 @pytest.fixture

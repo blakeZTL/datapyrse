@@ -1,6 +1,5 @@
 import pytest
-from datapyrse.models.column_set import ColumnSet
-from datapyrse.models.query_expression import QueryExpression
+from datapyrse.query import ColumnSet, QueryExpression
 
 
 def test_query_expression_no_entity_name():

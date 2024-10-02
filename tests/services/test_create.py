@@ -2,18 +2,16 @@ from typing import List
 import uuid
 import pytest
 from unittest import mock
-from datapyrse.models.entity import Entity
-from datapyrse.models.entity_metadata import (
+from datapyrse import Entity, ServiceClient
+from datapyrse._entity_metadata import (
     AttributeMetadata,
     EntityMetadata,
     OrgMetadata,
 )
-from datapyrse.services.service_client import ServiceClient
-from datapyrse.utils.dataverse import (
+from datapyrse.utils._dataverse import (
     get_entity_collection_name_by_logical_name,
     parse_entity_to_web_api_body,
 )
-from datapyrse.services.create import CreateRequest
 
 
 @pytest.fixture

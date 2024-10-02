@@ -1,5 +1,7 @@
+# pylint: disable=missing-module-docstring, missing-function-docstring
+
 import pytest
-from datapyrse.models.column_set import ColumnSet
+from datapyrse.query import ColumnSet
 
 
 def test_column_set_with_list():
@@ -7,12 +9,18 @@ def test_column_set_with_list():
     assert column_set.columns == ["name", "email"]
 
 
+def test_column_set_with_none():
+    with pytest.raises(
+        ValueError, match="Columns must be a list of strings or a value of True"
+    ):
+        ColumnSet(columns=None)  # type: ignore
+
+
 def test_column_set_with_false():
     with pytest.raises(
         ValueError, match="Columns must be a list of strings or a value of True"
     ):
-        column_set = ColumnSet(columns=False)
-        assert column_set.columns == None
+        ColumnSet(columns=False)
 
 
 def test_column_set_with_true():
@@ -20,8 +28,8 @@ def test_column_set_with_true():
     assert column_set.columns == []
 
 
-def test_column_set_with_none():
+def test_column_set_with_mixed_list():
     with pytest.raises(
         ValueError, match="Columns must be a list of strings or a value of True"
     ):
-        ColumnSet(columns=None)  # type: ignore
+        ColumnSet(columns=["name", 1, "email"])  # type: ignore

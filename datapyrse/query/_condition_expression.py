@@ -3,8 +3,8 @@ A module for creating condition expressions for filtering data in a query
 """
 
 from dataclasses import dataclass
-from typing import Any, List, Union
-import uuid
+from typing import Any, Optional, Union
+from uuid import UUID
 from enum import StrEnum
 
 
@@ -71,18 +71,21 @@ class ConditionExpression:
 
     attribute_name: str
     operator: ConditionOperator
-    value: Union[List[Any], bool, int, float, str, uuid.UUID, None]
+    value: Optional[Union[list[Any], bool, int, float, str, UUID]] = None
 
     def __post_init__(self) -> None:
 
         if not self.operator:
             raise ValueError("Operator is required")
 
+        if not isinstance(self.operator, ConditionOperator):  # type: ignore
+            raise ValueError("Operator must be a ConditionOperator")
+
         if not self.attribute_name:
             raise ValueError("Attribute name is required")
 
         if self.value:
-            if not isinstance(self.value, (list, bool, int, float, str, uuid.UUID)):
+            if not isinstance(self.value, (list, bool, int, float, str, UUID)):
                 raise ValueError(
                     "Value must be a list, boolean, integer, float, string, or UUID"
                 )

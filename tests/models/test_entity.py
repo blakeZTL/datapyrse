@@ -1,9 +1,8 @@
 import uuid
 from dataclasses import is_dataclass
 from uuid import uuid4
-from datapyrse.models.entity import Entity
-from datapyrse.models.entity_reference import EntityReference
-from datapyrse.models.option_set import OptionSet
+from datapyrse import Entity, EntityReference
+from datapyrse.query._option_set import OptionSet
 
 
 # Test initialization and default attributes

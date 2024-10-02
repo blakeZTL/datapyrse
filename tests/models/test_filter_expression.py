@@ -1,9 +1,9 @@
 import pytest
-from datapyrse.models.condition_expression import (
+from datapyrse.query import (
     ConditionExpression,
     ConditionOperator,
 )
-from datapyrse.models.filter_expression import FilterExpression, FilterOperator
+from datapyrse.query import FilterExpression, FilterOperator
 
 
 @pytest.fixture

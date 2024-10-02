@@ -3,7 +3,7 @@ A module for creating entity references in Dataverse
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional, Union
 from uuid import UUID
 
 
@@ -26,17 +26,44 @@ class EntityReference:
     """
 
     entity_logical_name: str
-    entity_id: Optional[UUID] = None
+    entity_id: Optional[Union[UUID, str]] = None
     name: Optional[str] = None
 
     def __post_init__(self) -> None:
-        if not self.entity_logical_name:
-            raise ValueError("EntityReference entity_logical_name is required.")
+        if not self.entity_logical_name or not isinstance(self.entity_logical_name, str):  # type: ignore
+            raise ValueError(
+                "EntityReference entity_logical_name of type string is required."
+            )
+        if self.entity_id and not isinstance(self.entity_id, UUID):
+            try:
+                self.entity_id = UUID(self.entity_id)
+            except ValueError as exc:
+                raise ValueError(
+                    "EntityReference entity_id of type UUID or compatible string is required."
+                ) from exc
+
+        if self.name and not isinstance(self.name, str):  # type: ignore
+            raise ValueError("EntityReference name of type string is required.")
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name == "entity_id" and value:
+            if not isinstance(value, (UUID, str)):
+                raise ValueError(
+                    "EntityReference entity_id of type UUID or compatible string is required."
+                )
+            if isinstance(value, str):
+                try:
+                    value = UUID(value)
+                except ValueError as exc:
+                    raise ValueError(
+                        "EntityReference entity_id of type UUID or compatible string is required."
+                    ) from exc
+        super().__setattr__(name, value)
 
     def to_dict(self) -> dict[str, str]:
         """Convert EntityReference instance to a dictionary."""
         return {
-            "id": str(self.entity_id),
+            "id": str(self.entity_id) if self.entity_id else "",
             "logical_name": self.entity_logical_name,
             "name": self.name or "",
         }

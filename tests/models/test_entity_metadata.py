@@ -1,4 +1,9 @@
-from datapyrse.models.entity_metadata import *
+from datapyrse._entity_metadata import (
+    AttributeMetadata,
+    EntityMetadata,
+    LocalizedLabel,
+    OrgMetadata,
+)
 
 
 def test_attribute_metadata_from_json():

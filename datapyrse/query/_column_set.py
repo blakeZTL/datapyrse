@@ -34,3 +34,7 @@ class ColumnSet:
             if self.columns is False:
                 raise ValueError("Columns must be a list of strings or a value of True")
             self.columns = []
+        if not isinstance(self.columns, bool) and not all(
+            isinstance(column, str) for column in self.columns  # type: ignore
+        ):
+            raise ValueError("Columns must be a list of strings or a value of True")

@@ -1,4 +1,4 @@
-from datapyrse.models.option_set import OptionSet
+from datapyrse.query._option_set import OptionSet
 
 
 def test_option_set_empty_initialization():
